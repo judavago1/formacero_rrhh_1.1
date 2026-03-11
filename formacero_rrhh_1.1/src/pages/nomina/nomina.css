@@ -1,119 +1,208 @@
 body {
     font-family: 'Segoe UI', Arial, sans-serif;
-    background: url("https://images.unsplash.com/photo-1521737604893-d14cc237f11d") no-repeat center center fixed;
+
+    background: url("https://images.unsplash.com/photo-1521737604893-d14cc237f11d")
+    no-repeat center center fixed;
+
     background-size: cover;
+
     display: flex;
     justify-content: center;
     align-items: center;
+
     min-height: 100vh;
+
     margin: 0;
     position: relative;
 }
 
 /* Capa oscura encima de la imagen */
+
 body::before {
+
     content: "";
+
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.6);
+
+    background: rgba(0,0,0,0.6);
+
     z-index: 0;
 }
 
+
+/* CONTENEDOR */
+
 .contenedor-nomina {
+
     position: relative;
     z-index: 1;
-    background: rgba(255, 255, 255, 0.95);
+
+    background: rgba(255,255,255,0.95);
+
     padding: 40px;
+
     width: 550px;
+
     border-radius: 15px;
+
     backdrop-filter: blur(10px);
+
     box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+
     animation: fadeIn 0.6s ease-in-out;
 }
 
+
+/* TITULO */
+
 h2 {
+
     text-align: center;
+
     margin-bottom: 25px;
-    color: #1e3a8a;
+
+    color: #2E4A92;
+
     font-weight: 600;
 }
 
+
+/* LABELS */
+
 label {
+
     display: block;
+
     margin-top: 15px;
+
     font-weight: 600;
+
     color: #333;
 }
 
-input, select {
+
+/* INPUTS */
+
+input,
+select {
+
     width: 100%;
+
     padding: 10px;
+
     margin-top: 6px;
+
     border-radius: 8px;
+
     border: 1px solid #ccc;
+
     transition: 0.3s;
+
     font-size: 14px;
 }
 
-input:focus, select:focus {
-    border-color: #1e88e5;
+input:focus,
+select:focus {
+
+    border-color: #2E4A92;
+
     outline: none;
-    box-shadow: 0 0 8px rgba(30,136,229,0.4);
+
+    box-shadow: 0 0 8px rgba(46,74,146,0.4);
 }
 
+
+/* BOTONES */
+
 button {
+
     margin-top: 20px;
+
     padding: 12px;
+
     width: 100%;
+
     border: none;
+
     border-radius: 8px;
-    background: linear-gradient(135deg, #1e88e5, #1565c0);
+
+    background: linear-gradient(135deg,#2E4A92,#243B7A);
+
     color: white;
+
     font-weight: bold;
+
     font-size: 15px;
+
     cursor: pointer;
+
     transition: 0.3s ease;
 }
 
 button:hover {
+
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(21,101,192,0.4);
+
+    box-shadow: 0 5px 15px rgba(46,74,146,0.4);
 }
 
+
+/* DESPRENDIBLE */
+
 .desprendible {
+
     margin-top: 30px;
+
     padding: 25px;
+
     border-radius: 10px;
+
     background: #f9fafc;
-    border-left: 5px solid #1e88e5;
+
+    border-left: 5px solid #2E4A92;
+
     box-shadow: 0 5px 15px rgba(0,0,0,0.05);
 }
 
 .desprendible h3 {
+
     margin-top: 0;
-    color: #1e3a8a;
+
+    color: #2E4A92;
 }
 
 .desprendible p {
+
     margin: 6px 0;
+
     font-size: 14px;
 }
 
 hr {
+
     border: none;
+
     height: 1px;
+
     background: #ddd;
+
     margin: 15px 0;
 }
 
-/* Animación suave */
+
+/* ANIMACION */
+
 @keyframes fadeIn {
+
     from {
         opacity: 0;
         transform: translateY(20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
     }
+
 }
