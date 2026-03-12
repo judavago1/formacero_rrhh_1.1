@@ -1,191 +1,161 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import "./registrar-empleados.css";
 
 function RegistrarEmpleados() {
 
-const [empleados,setEmpleados] = useState([]);
+  const [empleados, setEmpleados] = useState([]);
 
-const [form,setForm] = useState({
-nombre:"",
-cedula:"",
-correo:"",
-cargo:"",
-salario:"",
-fechaIngreso:"",
-foto:null
-});
+  const [form, setForm] = useState({
+    nombre: "",
+    cedula: "",
+    correo: "",
+    cargo: "",
+    salario: "",
+    fechaIngreso: "",
+    foto: null
+  });
 
-const [preview,setPreview] = useState(null);
-const [documentos,setDocumentos] = useState([]);
+  const [preview, setPreview] = useState(null);
+  const [documentos, setDocumentos] = useState([]);
 
-function handleChange(e){
-setForm({
-...form,
-[e.target.id]:e.target.value
-});
-}
+  function handleChange(e){
+    setForm({
+      ...form,
+      [e.target.id]: e.target.value
+    });
+  }
 
-function handleFoto(e){
+  function handleFoto(e){
+    const file = e.target.files[0];
+    if(file){
+      setForm({...form,foto:file});
+      const reader = new FileReader();
+      reader.onload = () => { setPreview(reader.result); };
+      reader.readAsDataURL(file);
+    }
+  }
 
-const file = e.target.files[0];
+  function handleDocs(e){
+    setDocumentos([...e.target.files]);
+  }
 
-if(file){
-setForm({...form,foto:file});
+  function handleSubmit(e){
+    e.preventDefault();
+    const nuevoEmpleado = { ...form, preview, documentos };
+    setEmpleados([...empleados, nuevoEmpleado]);
 
-const reader = new FileReader();
+    setForm({
+      nombre: "",
+      cedula: "",
+      correo: "",
+      cargo: "",
+      salario: "",
+      fechaIngreso: "",
+      foto: null
+    });
+    setPreview(null);
+    setDocumentos([]);
+  }
 
-reader.onload = () =>{
-setPreview(reader.result);
-};
+  return (
+    <div className="registrar-empleados-principal">
 
-reader.readAsDataURL(file);
-}
-}
+      {/* HEADER */}
+      <header className="header">
+        <div className="logo">Formacero</div>
+        <Link to="/dashboard" className="back-btn">← Volver al Panel</Link>
+      </header>
 
-function handleDocs(e){
-setDocumentos([...e.target.files]);
-}
+      {/* HERO */}
+      <section className="hero">
+        <h1>Registro de Empleados</h1>
+        <p>Formulario para registrar y gestionar empleados</p>
+      </section>
 
-function handleSubmit(e){
+      {/* FORMULARIO */}
+      <div className="container">
 
-e.preventDefault();
+        <form onSubmit={handleSubmit}>
 
-const nuevoEmpleado = {
-...form,
-preview,
-documentos
-};
+          <div className="form-grid">
+            <div className="form-group">
+              <label>Nombre Completo</label>
+              <input type="text" id="nombre" value={form.nombre} onChange={handleChange} required/>
+            </div>
 
-setEmpleados([...empleados,nuevoEmpleado]);
+            <div className="form-group">
+              <label>Cédula</label>
+              <input type="text" id="cedula" value={form.cedula} onChange={handleChange} required/>
+            </div>
 
-setForm({
-nombre:"",
-cedula:"",
-correo:"",
-cargo:"",
-salario:"",
-fechaIngreso:"",
-foto:null
-});
+            <div className="form-group">
+              <label>Correo</label>
+              <input type="email" id="correo" value={form.correo} onChange={handleChange} required/>
+            </div>
 
-setPreview(null);
-setDocumentos([]);
+            <div className="form-group">
+              <label>Cargo</label>
+              <input type="text" id="cargo" value={form.cargo} onChange={handleChange} required/>
+            </div>
 
-}
+            <div className="form-group">
+              <label>Salario</label>
+              <input type="number" id="salario" value={form.salario} onChange={handleChange} required/>
+            </div>
 
-return (
+            <div className="form-group">
+              <label>Fecha de Ingreso</label>
+              <input type="date" id="fechaIngreso" value={form.fechaIngreso} onChange={handleChange} required/>
+            </div>
+          </div>
 
-<div className="container">
+          <div className="form-group">
+            <label>Foto del Empleado</label>
+            <input type="file" accept="image/*" onChange={handleFoto}/>
+            {preview && <img src={preview} className="preview-img" alt="preview"/>}
+          </div>
 
-<h1>Registro de Empleado</h1>
+          <div className="form-group">
+            <label>Documentos (PDF, Word, etc)</label>
+            <input type="file" multiple onChange={handleDocs}/>
+            <ul>
+              {documentos.map((doc,i)=>(<li key={i} className="file-item">{doc.name}</li>))}
+            </ul>
+          </div>
 
-<form onSubmit={handleSubmit}>
+          <button type="submit" className="btn">Registrar Empleado</button>
+        </form>
 
-<div className="form-grid">
+        <hr/>
 
-<div className="form-group">
-<label>Nombre Completo</label>
-<input type="text" id="nombre" value={form.nombre} onChange={handleChange} required/>
-</div>
+        <h2>Lista de Empleados Registrados</h2>
 
-<div className="form-group">
-<label>Cédula</label>
-<input type="text" id="cedula" value={form.cedula} onChange={handleChange} required/>
-</div>
+        <div>
+          {empleados.map((emp,i)=>(
+            <div key={i} className="employee-card">
+              {emp.preview && <img src={emp.preview} alt="empleado"/>}
+              <div className="employee-info">
+                <h3>{emp.nombre}</h3>
+                <p>Cédula: {emp.cedula}</p>
+                <p>Correo: {emp.correo}</p>
+                <p>Cargo: {emp.cargo}</p>
+                <p>Salario: ${emp.salario}</p>
+                <p>Ingreso: {emp.fechaIngreso}</p>
+              </div>
+            </div>
+          ))}
+        </div>
 
-<div className="form-group">
-<label>Correo</label>
-<input type="email" id="correo" value={form.correo} onChange={handleChange} required/>
-</div>
+      </div>
 
-<div className="form-group">
-<label>Cargo</label>
-<input type="text" id="cargo" value={form.cargo} onChange={handleChange} required/>
-</div>
+      {/* FOOTER */}
+      <footer className="footer">
+        © {new Date().getFullYear()} Formacero. Todos los derechos reservados.
+      </footer>
 
-<div className="form-group">
-<label>Salario</label>
-<input type="number" id="salario" value={form.salario} onChange={handleChange} required/>
-</div>
-
-<div className="form-group">
-<label>Fecha de Ingreso</label>
-<input type="date" id="fechaIngreso" value={form.fechaIngreso} onChange={handleChange} required/>
-</div>
-
-</div>
-
-
-<div className="form-group">
-
-<label>Foto del Empleado</label>
-
-<input type="file" accept="image/*" onChange={handleFoto}/>
-
-{preview && (
-<img src={preview} className="preview-img" alt="preview"/>
-)}
-
-</div>
-
-
-<div className="form-group">
-
-<label>Documentos (PDF, Word, etc)</label>
-
-<input type="file" multiple onChange={handleDocs}/>
-
-<ul>
-{documentos.map((doc,i)=>(
-<li key={i} className="file-item">{doc.name}</li>
-))}
-</ul>
-
-</div>
-
-
-<button type="submit" className="btn">
-Registrar Empleado
-</button>
-
-</form>
-
-<hr/>
-
-<h2>Lista de Empleados Registrados</h2>
-
-<div>
-
-{empleados.map((emp,i)=>(
-
-<div key={i} className="employee-card">
-
-{emp.preview && (
-<img src={emp.preview} alt="empleado"/>
-)}
-
-<div className="employee-info">
-
-<h3>{emp.nombre}</h3>
-
-<p>Cédula: {emp.cedula}</p>
-<p>Correo: {emp.correo}</p>
-<p>Cargo: {emp.cargo}</p>
-<p>Salario: ${emp.salario}</p>
-<p>Ingreso: {emp.fechaIngreso}</p>
-
-</div>
-
-</div>
-
-))}
-
-</div>
-
-</div>
-
-);
-
+    </div>
+  );
 }
 
 export default RegistrarEmpleados;

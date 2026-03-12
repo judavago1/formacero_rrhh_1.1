@@ -1,27 +1,27 @@
 import React, { useState, useRef } from "react";
+import { Link } from "react-router-dom";
 import "./nomina.css";
 import html2pdf from "html2pdf.js";
 
 function Nomina() {
 
-const [empleado,setEmpleado] = useState("");
-const [salario,setSalario] = useState("");
-const [dias,setDias] = useState("");
-const [desprendible,setDesprendible] = useState("");
+  const [empleado, setEmpleado] = useState("");
+  const [salario, setSalario] = useState("");
+  const [dias, setDias] = useState("");
+  const [desprendible, setDesprendible] = useState("");
 
-const desprendibleRef = useRef();
+  const desprendibleRef = useRef();
 
-function generarDesprendible(){
+  function generarDesprendible() {
+    if (!empleado || !salario || !dias) {
+      alert("Completa todos los campos");
+      return;
+    }
 
-if(!empleado || !salario || !dias){
-alert("Completa todos los campos");
-return;
-}
+    const salarioDia = salario / 30;
+    const total = salarioDia * dias;
 
-const salarioDia = salario / 30;
-const total = salarioDia * dias;
-
-const texto = `
+    const texto = `
 Empresa: Formacero S.A.S
 
 Empleado: ${empleado}
@@ -35,95 +35,85 @@ Total a pagar: $${total.toLocaleString()}
 Fecha de generación: ${new Date().toLocaleDateString()}
 `;
 
-setDesprendible(texto);
+    setDesprendible(texto);
+  }
 
-}
+  function descargarPDF() {
+    if (!desprendible) {
+      alert("Primero genera el desprendible");
+      return;
+    }
 
-function descargarPDF(){
+    const element = desprendibleRef.current;
 
-if(!desprendible){
-alert("Primero genera el desprendible");
-return;
-}
+    html2pdf()
+      .set({
+        margin: 10,
+        filename: "desprendible_nomina.pdf",
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+      })
+      .from(element)
+      .save();
+  }
 
-const element = desprendibleRef.current;
+  return (
+    <div className="contenedor-nomina-principal">
 
-html2pdf()
-.set({
-margin:10,
-filename:"desprendible_nomina.pdf",
-html2canvas:{ scale:2 },
-jsPDF:{ unit:"mm", format:"a4", orientation:"portrait" }
-})
-.from(element)
-.save();
+      {/* HEADER */}
+      <header className="header">
+        <div className="logo">Formacero</div>
+        <Link to="/dashboard" className="back-btn">← Volver al Panel</Link>
+      </header>
 
-}
+      {/* HERO */}
+      <section className="hero">
+        <h1>Generar Desprendible de Pago</h1>
+        <p>Gestión de nómina y generación de desprendibles para empleados</p>
+      </section>
 
-return(
+      {/* FORMULARIO DE NÓMINA */}
+      <div className="contenedor-nomina">
 
-<div className="contenedor-nomina">
+        <label>Seleccionar empleado:</label>
+        <select value={empleado} onChange={(e) => setEmpleado(e.target.value)}>
+          <option value="">-- Seleccione --</option>
+          <option value="Juan Pérez">Juan Pérez</option>
+          <option value="María Gómez">María Gómez</option>
+          <option value="Carlos López">Carlos López</option>
+        </select>
 
-<h2>Generar Desprendible de Pago</h2>
+        <label>Salario Base:</label>
+        <input
+          type="number"
+          placeholder="Ej: 2000000"
+          value={salario}
+          onChange={(e) => setSalario(e.target.value)}
+        />
 
-<label>Seleccionar empleado:</label>
+        <label>Días trabajados:</label>
+        <input
+          type="number"
+          placeholder="Ej: 30"
+          value={dias}
+          onChange={(e) => setDias(e.target.value)}
+        />
 
-<select
-value={empleado}
-onChange={(e)=>setEmpleado(e.target.value)}
->
+        <button onClick={generarDesprendible}>Generar</button>
+        <button onClick={descargarPDF}>Descargar PDF</button>
 
-<option value="">-- Seleccione --</option>
-<option value="Juan Pérez">Juan Pérez</option>
-<option value="María Gómez">María Gómez</option>
-<option value="Carlos López">Carlos López</option>
+        <div id="desprendible" className="desprendible" ref={desprendibleRef}>
+          <pre>{desprendible}</pre>
+        </div>
+      </div>
 
-</select>
+      {/* FOOTER */}
+      <footer className="footer">
+        © {new Date().getFullYear()} Formacero. Todos los derechos reservados.
+      </footer>
 
-
-<label>Salario Base:</label>
-
-<input
-type="number"
-placeholder="Ej: 2000000"
-value={salario}
-onChange={(e)=>setSalario(e.target.value)}
-/>
-
-
-<label>Días trabajados:</label>
-
-<input
-type="number"
-placeholder="Ej: 30"
-value={dias}
-onChange={(e)=>setDias(e.target.value)}
-/>
-
-
-<button onClick={generarDesprendible}>
-Generar
-</button>
-
-<button onClick={descargarPDF}>
-Descargar PDF
-</button>
-
-
-<div
-id="desprendible"
-className="desprendible"
-ref={desprendibleRef}
->
-
-<pre>{desprendible}</pre>
-
-</div>
-
-</div>
-
-);
-
+    </div>
+  );
 }
 
 export default Nomina;

@@ -1,46 +1,46 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import "./certificado-laboral.css";
 
 function CertificadoLaboral() {
 
-const [selected, setSelected] = useState("");
-const [text, setText] = useState("");
-const [visible, setVisible] = useState(false);
+  const [selected, setSelected] = useState("");
+  const [text, setText] = useState("");
+  const [visible, setVisible] = useState(false);
 
-const employees = {
+  const employees = {
     juan: {
-        nombre: "Juan Vargas",
-        cargo: "Gerente General",
-        fechaIngreso: "01 de Enero de 2020",
-        salario: "$8.000.000"
+      nombre: "Juan Vargas",
+      cargo: "Gerente General",
+      fechaIngreso: "01 de Enero de 2020",
+      salario: "$8.000.000"
     },
     laura: {
-        nombre: "Laura Gómez",
-        cargo: "Gerente RRHH",
-        fechaIngreso: "15 de Marzo de 2021",
-        salario: "$6.500.000"
+      nombre: "Laura Gómez",
+      cargo: "Gerente RRHH",
+      fechaIngreso: "15 de Marzo de 2021",
+      salario: "$6.500.000"
     },
     carlos: {
-        nombre: "Carlos Pérez",
-        cargo: "Gerente Finanzas",
-        fechaIngreso: "10 de Junio de 2019",
-        salario: "$7.200.000"
+      nombre: "Carlos Pérez",
+      cargo: "Gerente Finanzas",
+      fechaIngreso: "10 de Junio de 2019",
+      salario: "$7.200.000"
     }
-};
+  };
 
-const generateCertificate = () => {
-
+  const generateCertificate = () => {
     if (!selected) {
-        alert("Selecciona un empleado");
-        return;
+      alert("Selecciona un empleado");
+      return;
     }
 
     const employee = employees[selected];
 
     const today = new Date().toLocaleDateString("es-CO", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric"
+      day: "2-digit",
+      month: "long",
+      year: "numeric"
     });
 
     const certificateText = `
@@ -55,62 +55,58 @@ Este certificado se expide a solicitud del interesado(a) el día ${today}.
 
     setText(certificateText);
     setVisible(true);
-};
+  };
 
-return (
+  return (
+    <div className="certificado-laboral-principal">
 
-<div className="container">
+      {/* HEADER */}
+      <header className="header">
+        <div className="logo">Formacero</div>
+        <Link to="/dashboard" className="back-btn">← Volver al Panel</Link>
+      </header>
 
-<h1>Generar Certificado Laboral</h1>
+      {/* HERO */}
+      <section className="hero">
+        <h1>Generar Certificado Laboral</h1>
+        <p>Seleccione un empleado y genere su certificado laboral</p>
+      </section>
 
-<div className="generator-box">
+      {/* GENERADOR */}
+      <div className="container">
 
-<select
-value={selected}
-onChange={(e)=>setSelected(e.target.value)}
->
+        <div className="generator-box">
+          <select value={selected} onChange={(e)=>setSelected(e.target.value)}>
+            <option value="">Seleccionar empleado</option>
+            <option value="juan">Juan Vargas</option>
+            <option value="laura">Laura Gómez</option>
+            <option value="carlos">Carlos Pérez</option>
+          </select>
 
-<option value="">Seleccionar empleado</option>
-<option value="juan">Juan Vargas</option>
-<option value="laura">Laura Gómez</option>
-<option value="carlos">Carlos Pérez</option>
+          <button onClick={generateCertificate}>Generar</button>
+          <button onClick={()=>window.print()}>Imprimir</button>
+        </div>
 
-</select>
+        <div className="certificate" style={{display: visible ? "block" : "none"}}>
+          <h2>CERTIFICADO LABORAL</h2>
+          <p>{text}</p>
 
-<button onClick={generateCertificate}>
-Generar
-</button>
+          <div className="firma">
+            <p>Cordialmente,</p>
+            <strong>Departamento de Recursos Humanos</strong>
+            <p>Formacero S.A.S</p>
+          </div>
+        </div>
 
-<button onClick={()=>window.print()}>
-Imprimir
-</button>
+      </div>
 
-</div>
+      {/* FOOTER */}
+      <footer className="footer">
+        © {new Date().getFullYear()} Formacero. Todos los derechos reservados.
+      </footer>
 
-<div
-className="certificate"
-style={{display: visible ? "block" : "none"}}
->
-
-<h2>CERTIFICADO LABORAL</h2>
-
-<p>{text}</p>
-
-<div className="firma">
-
-<p>Cordialmente,</p>
-
-<strong>Departamento de Recursos Humanos</strong>
-
-<p>Formacero S.A.S</p>
-
-</div>
-
-</div>
-
-</div>
-
-);
+    </div>
+  );
 }
 
 export default CertificadoLaboral;
