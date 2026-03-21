@@ -13,6 +13,8 @@ function RegistrarEmpleados() {
     cargo: "",
     salario: "",
     fechaIngreso: "",
+    fechaNacimiento: "", // 🔥 AGREGADO
+    departamento: "",
     foto: null
   });
 
@@ -46,52 +48,85 @@ function RegistrarEmpleados() {
     setDocumentos([...e.target.files]);
   }
 
-  function handleSubmit(e){
+  async function handleSubmit(e){
     e.preventDefault();
 
-    const nuevoEmpleado = {
-      ...form,
-      preview,
-      documentos
-    };
+    try {
 
-    setEmpleados([...empleados, nuevoEmpleado]);
+      const nuevoEmpleado = {
+        nombre: form.nombre,
+        cedula: form.cedula,
+        correo: form.correo,
+        cargo: form.cargo,
+        salario: form.salario,
+        fechaIngreso: form.fechaIngreso,
+        fechaNacimiento: form.fechaNacimiento, // 🔥 IMPORTANTE
+        departamento: form.departamento
+      };
 
-    setForm({
-      nombre:"",
-      cedula:"",
-      correo:"",
-      cargo:"",
-      salario:"",
-      fechaIngreso:"",
-      foto:null
-    });
+      const res = await fetch("http://localhost:3001/empleados", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(nuevoEmpleado)
+      });
 
-    setPreview(null);
-    setDocumentos([]);
+      const data = await res.json();
+      console.log(data);
+
+      // 🔹 mantener preview local
+      const nuevoLocal = {
+        ...form,
+        preview,
+        documentos
+      };
+
+      setEmpleados([...empleados, nuevoLocal]);
+
+      // 🔄 limpiar formulario
+      setForm({
+        nombre:"",
+        cedula:"",
+        correo:"",
+        cargo:"",
+        salario:"",
+        fechaIngreso:"",
+        fechaNacimiento:"", // 🔥 LIMPIAR TAMBIÉN
+        departamento: "",
+        foto:null
+      });
+
+      setPreview(null);
+      setDocumentos([]);
+
+      alert("✅ Empleado registrado correctamente");
+
+    } catch (error) {
+      console.error("Error:", error);
+      alert("❌ Error al registrar empleado");
+    }
   }
 
   return (
 
     <div className="registrar-empleados-principal">
 
-      {/* HEADER */}
       <header className="header">
         <div className="logo">Formacero</div>
+        <div className="search-bar">
+          <input type="text" placeholder="Buscar empleados..." />
+        </div>
         <Link to="/dashboard" className="back-btn">
           ← Volver al Panel
         </Link>
       </header>
 
-
-      {/* HERO */}
       <section className="hero">
         <h1>Registro de Empleados</h1>
         <p>Formulario para registrar y gestionar empleados</p>
       </section>
 
-
-      {/* SECCIÓN FORMULARIO */}
       <section className="seccion-registrar-empleados">
 
         <div className="container">
@@ -102,110 +137,65 @@ function RegistrarEmpleados() {
 
               <div className="form-group">
                 <label>Nombre Completo</label>
-                <input
-                  type="text"
-                  id="nombre"
-                  value={form.nombre}
-                  onChange={handleChange}
-                  required
-                />
+                <input type="text" id="nombre" value={form.nombre} onChange={handleChange} required />
               </div>
 
               <div className="form-group">
                 <label>Cédula</label>
-                <input
-                  type="text"
-                  id="cedula"
-                  value={form.cedula}
-                  onChange={handleChange}
-                  required
-                />
+                <input type="text" id="cedula" value={form.cedula} onChange={handleChange} required />
               </div>
 
               <div className="form-group">
                 <label>Correo</label>
-                <input
-                  type="email"
-                  id="correo"
-                  value={form.correo}
-                  onChange={handleChange}
-                  required
-                />
+                <input type="email" id="correo" value={form.correo} onChange={handleChange} required />
               </div>
 
               <div className="form-group">
                 <label>Cargo</label>
-                <input
-                  type="text"
-                  id="cargo"
-                  value={form.cargo}
-                  onChange={handleChange}
-                  required
-                />
+                <input type="text" id="cargo" value={form.cargo} onChange={handleChange} required />
               </div>
 
               <div className="form-group">
                 <label>Salario</label>
-                <input
-                  type="number"
-                  id="salario"
-                  value={form.salario}
-                  onChange={handleChange}
-                  required
-                />
+                <input type="number" id="salario" value={form.salario} onChange={handleChange} required />
               </div>
 
               <div className="form-group">
                 <label>Fecha de Ingreso</label>
-                <input
-                  type="date"
-                  id="fechaIngreso"
-                  value={form.fechaIngreso}
-                  onChange={handleChange}
-                  required
-                />
+                <input type="date" id="fechaIngreso" value={form.fechaIngreso} onChange={handleChange} required />
+              </div>
+
+              <div className="form-group">
+                <label>Fecha de Nacimiento</label>
+                <input type="date" id="fechaNacimiento" value={form.fechaNacimiento} onChange={handleChange} required />
+              </div>
+
+              <div className="form-group">
+                <label>Departamento</label>
+                <input type="text" id="departamento" value={form.departamento} onChange={handleChange} required/>
               </div>
 
             </div>
 
-
             <div className="form-group">
               <label>Foto del Empleado</label>
-
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFoto}
-              />
+              <input type="file" accept="image/*" onChange={handleFoto} />
 
               {preview && (
-                <img
-                  src={preview}
-                  className="preview-img"
-                  alt="preview"
-                />
+                <img src={preview} className="preview-img" alt="preview" />
               )}
             </div>
 
-
             <div className="form-group">
-              <label>Documentos (PDF, Word, etc)</label>
-
-              <input
-                type="file"
-                multiple
-                onChange={handleDocs}
-              />
+              <label>Documentos</label>
+              <input type="file" multiple onChange={handleDocs} />
 
               <ul>
-                {documentos.map((doc,i)=>(
-                  <li key={i} className="file-item">
-                    {doc.name}
-                  </li>
+                {documentos.map((doc, i) => (
+                  <li key={i} className="file-item">{doc.name}</li>
                 ))}
               </ul>
             </div>
-
 
             <button type="submit" className="btn">
               Registrar Empleado
@@ -213,14 +203,11 @@ function RegistrarEmpleados() {
 
           </form>
 
-
           <hr/>
-
 
           <h2>Lista de Empleados Registrados</h2>
 
           <div>
-
             {empleados.map((emp,i)=>(
               <div key={i} className="employee-card">
 
@@ -229,34 +216,29 @@ function RegistrarEmpleados() {
                 )}
 
                 <div className="employee-info">
-
                   <h3>{emp.nombre}</h3>
-
                   <p>Cédula: {emp.cedula}</p>
                   <p>Correo: {emp.correo}</p>
                   <p>Cargo: {emp.cargo}</p>
                   <p>Salario: ${emp.salario}</p>
                   <p>Ingreso: {emp.fechaIngreso}</p>
-
+                  <p>Nacimiento: {emp.fechaNacimiento}</p> {/* 🔥 EXTRA */}
+                  <p>Departamento: {emp.departamento}</p>
                 </div>
 
               </div>
             ))}
-
           </div>
 
         </div>
 
       </section>
 
-
-      {/* FOOTER */}
       <footer className="footer">
-        © {new Date().getFullYear()} Formacero. Todos los derechos reservados.
+        © {new Date().getFullYear()} Formacero.
       </footer>
 
     </div>
-
   );
 }
 

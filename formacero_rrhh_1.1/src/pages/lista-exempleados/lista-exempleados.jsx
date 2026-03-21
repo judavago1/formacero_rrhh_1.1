@@ -1,44 +1,81 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import "./lista-exempleados.css";
 
 function ListaExempleados() {
 
   const [openRow, setOpenRow] = useState(null);
+  const [exempleados, setExempleados] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const exempleados = [
-    {
-      nombre: "Pedro Martínez",
-      cargo: "Empleado RRHH",
-      departamento: "Recursos Humanos",
-      ingreso: "10/02/2020",
-      retiro: "15/01/2024",
-      motivo: "Renuncia voluntaria por crecimiento profesional en otra compañía."
-    },
-    {
-      nombre: "Ana Rodríguez",
-      cargo: "Administrativa Finanzas",
-      departamento: "Finanzas",
-      ingreso: "05/06/2018",
-      retiro: "30/11/2023",
-      motivo: "Terminación de contrato por reestructuración interna."
-    },
-    {
-      nombre: "Luis Fernández",
-      cargo: "Empleado Finanzas",
-      departamento: "Finanzas",
-      ingreso: "12/03/2019",
-      retiro: "20/12/2024",
-      motivo: "Finalización de contrato a término fijo."
+  // 🔥 OBTENER EXEMPLEADOS DESDE BACKEND
+  const getExempleados = async () => {
+    try {
+      const res = await fetch("http://localhost:3001/empleados/exempleados");
+
+      if (!res.ok) {
+        throw new Error("Error en la respuesta del servidor");
+      }
+
+      const data = await res.json();
+
+      console.log("EXEMPLEADOS BACKEND:", data);
+
+      const formatted = data.map(emp => ({
+        id: emp.id,
+        nombre: emp.nombre,
+        cargo: emp.cargo,
+        departamento: emp.departamento,
+        ingreso: emp.fecha_ingreso,
+        retiro: emp.fecha_retiro,
+        motivo: emp.razon_despido
+      }));
+
+      setExempleados(formatted);
+
+    } catch (error) {
+      console.error("Error cargando exempleados:", error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  useEffect(() => {
+    getExempleados();
+  }, []);
 
   function toggleReason(index) {
-    if (openRow === index) {
-      setOpenRow(null);
-    } else {
-      setOpenRow(index);
+    setOpenRow(openRow === index ? null : index);
+  }
+
+  // 🔥 ELIMINAR DEFINITIVO
+  const handleDeleteEx = async (id) => {
+    const confirmDelete = window.confirm("¿Eliminar definitivamente este exempleado?");
+    if (!confirmDelete) return;
+
+    try {
+      const res = await fetch(`http://localhost:3001/empleados/exempleados/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        throw new Error("Error al eliminar");
+      }
+
+      // 🔥 Actualiza lista sin recargar
+      setExempleados(prev => prev.filter(emp => emp.id !== id));
+
+      alert("Exempleado eliminado definitivamente ✅");
+
+    } catch (error) {
+      console.error("Error eliminando exempleado:", error);
+      alert("Error al eliminar ❌");
     }
+  };
+
+  // 🟡 LOADING
+  if (loading) {
+    return <p style={{ padding: "20px" }}>Cargando exempleados...</p>;
   }
 
   return (
@@ -47,7 +84,17 @@ function ListaExempleados() {
       {/* HEADER */}
       <header className="header">
         <div className="logo">Formacero</div>
-        <Link to="/dashboard" className="back-btn">← Volver al Panel</Link>
+
+        <div className="search-bar">
+          <input
+            type="text"
+            placeholder="Buscar empleados..."
+          />
+        </div>
+
+        <Link to="/dashboard" className="back-btn">
+          ← Volver al Panel
+        </Link>
       </header>
 
       {/* HERO */}
@@ -67,41 +114,65 @@ function ListaExempleados() {
               <th>Fecha Ingreso</th>
               <th>Fecha Retiro</th>
               <th>Motivo</th>
+              <th>Acciones</th> {/* 🔥 NUEVA COLUMNA */}
             </tr>
           </thead>
-          <tbody>
-            {exempleados.map((emp, index) => (
-              <React.Fragment key={index}>
-                <tr className="ex-row">
-                  <td>{emp.nombre}</td>
-                  <td>{emp.cargo}</td>
-                  <td>{emp.departamento}</td>
-                  <td>{emp.ingreso}</td>
-                  <td>{emp.retiro}</td>
-                  <td>
-                    <button
-                      className="reason-btn"
-                      onClick={() => toggleReason(index)}
-                    >
-                      {openRow === index ? "Ocultar motivo" : "Ver motivo"}
-                    </button>
-                  </td>
-                </tr>
 
-                <tr className={`reason-row ${openRow === index ? "open" : ""}`}>
-                  <td colSpan="6">
-                    <div className="reason-box">{emp.motivo}</div>
-                  </td>
-                </tr>
-              </React.Fragment>
-            ))}
+          <tbody>
+            {exempleados.length === 0 ? (
+              <tr>
+                <td colSpan="7" style={{ textAlign: "center" }}>
+                  No hay exempleados registrados
+                </td>
+              </tr>
+            ) : (
+              exempleados.map((emp, index) => (
+                <React.Fragment key={emp.id}>
+                  <tr className="ex-row">
+                    <td>{emp.nombre}</td>
+                    <td>{emp.cargo}</td>
+                    <td>{emp.departamento || "Sin asignar"}</td>
+                    <td>{emp.ingreso?.split("T")[0]}</td>
+                    <td>{emp.retiro?.split("T")[0]}</td>
+
+                    <td>
+                      <button
+                        className="reason-btn"
+                        onClick={() => toggleReason(index)}
+                      >
+                        {openRow === index ? "Ocultar motivo" : "Ver motivo"}
+                      </button>
+                    </td>
+
+                    {/* 🔥 BOTÓN ELIMINAR */}
+                    <td>
+                      <button
+                        className="delete-btn"
+                        onClick={() => handleDeleteEx(emp.id)}
+                      >
+                        Eliminar
+                      </button>
+                    </td>
+                  </tr>
+
+                  <tr className={`reason-row ${openRow === index ? "open" : ""}`}>
+                    <td colSpan="7">
+                      <div className="reason-box">
+                        {emp.motivo || "Sin motivo registrado"}
+                      </div>
+                    </td>
+                  </tr>
+                </React.Fragment>
+              ))
+            )}
           </tbody>
+
         </table>
       </section>
 
       {/* FOOTER */}
       <footer className="footer">
-        © {new Date().getFullYear()} Formacero. Todos los derechos reservados.
+        © {new Date().getFullYear()} Formacero
       </footer>
 
     </div>

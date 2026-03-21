@@ -63,6 +63,12 @@ Fecha de generación: ${new Date().toLocaleDateString()}
       {/* HEADER */}
       <header className="header">
         <div className="logo">Formacero</div>
+        <div className="search-bar">
+        <input
+        type="text"
+        placeholder="Buscar empleados, cargos o documentos..."
+        />
+        </div>
         <Link to="/dashboard" className="back-btn">← Volver al Panel</Link>
       </header>
 
