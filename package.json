@@ -1,8 +1,13 @@
 {
+  "type": "module",
   "dependencies": {
     "concurrently": "^9.2.1"
   },
-  "scripts": {
-    "dev": "concurrently \"npm --prefix backend run dev\" \"npm --prefix formacero_rrhh_1.1 run dev\""
-  }
+  
+    "scripts": {
+      "dev": "node dev.js",
+      "dev:backend": "cd backend && exec node server.js",
+      "dev:frontend": "cd formacero_rrhh_1.1 && exec npm run dev"
+    }
+  
 }

@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react"; 
 import { Link, useNavigate } from "react-router-dom";
+import { API } from "../../utils/api";
 import "../../layout.css";
 import "./dashboard.css";
-
-const API = "http://localhost:3001/api";
 
 function Dashboard() {
 
@@ -145,7 +144,7 @@ function Dashboard() {
                   onMouseDown={() => navigate(`/empleado/${emp.id}`)}
                 >
                   <strong>{emp.nombre}</strong>
-                  <p>{emp.cargo}</p>
+                  <p>{emp.cargo || emp.correo || "Empleado"}</p>
                 </div>
               ))}
             </div>

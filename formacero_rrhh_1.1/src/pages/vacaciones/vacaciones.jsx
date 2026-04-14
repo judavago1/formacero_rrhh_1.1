@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { fetchWithAuth } from "../../utils/api";
 import "./vacaciones.css";
 
 function Vacaciones() {
@@ -16,11 +17,7 @@ function Vacaciones() {
 
         const token = localStorage.getItem("token");
 
-        const res = await fetch("http://localhost:3001/api/empleados", {
-          headers: {
-            "Authorization": `Bearer ${token}`
-          }
-        });
+        const res = await fetchWithAuth("/empleados");
 
         const data = await res.json();
 
@@ -65,12 +62,8 @@ function Vacaciones() {
 
       const token = localStorage.getItem("token");
 
-      const res = await fetch("http://localhost:3001/api/vacaciones", {
+      const res = await fetchWithAuth("/vacaciones", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
         body: JSON.stringify({
           empleado: empleadoSeleccionado.nombre,
           diasSolicitados

@@ -19,6 +19,11 @@ import Login from "./pages/login/login.jsx";
 
 import './layout.css';
 
+const RequireAuth = ({ children }) => {
+  const token = localStorage.getItem("token");
+  return token ? children : <Navigate to="/" replace />;
+};
+
 function App() {
   return (
     <Router>
@@ -28,20 +33,20 @@ function App() {
         <Route path="/" element={<Login />} />
 
         {/* 🔥 DASHBOARD */}
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
 
         {/* 🔹 RESTO DEL SISTEMA */}
-        <Route path="/registrar-empleados" element={<RegistrarEmpleados />} />
-        <Route path="/nomina" element={<Nomina />} />
-        <Route path="/vacaciones" element={<Vacaciones />} />
-        <Route path="/reportes" element={<Reportes />} />
-        <Route path="/organizacion" element={<Organizacion />} />
-        <Route path="/informacion-empleados" element={<InformacionEmpleados />} />
-        <Route path="/lista-exempleados" element={<ListaExempleados />} />
-        <Route path="/certificado-laboral" element={<CertificadoLaboral />} />
+        <Route path="/registrar-empleados" element={<RequireAuth><RegistrarEmpleados /></RequireAuth>} />
+        <Route path="/nomina" element={<RequireAuth><Nomina /></RequireAuth>} />
+        <Route path="/vacaciones" element={<RequireAuth><Vacaciones /></RequireAuth>} />
+        <Route path="/reportes" element={<RequireAuth><Reportes /></RequireAuth>} />
+        <Route path="/organizacion" element={<RequireAuth><Organizacion /></RequireAuth>} />
+        <Route path="/informacion-empleados" element={<RequireAuth><InformacionEmpleados /></RequireAuth>} />
+        <Route path="/lista-exempleados" element={<RequireAuth><ListaExempleados /></RequireAuth>} />
+        <Route path="/certificado-laboral" element={<RequireAuth><CertificadoLaboral /></RequireAuth>} />
 
         {/* 🔹 DETALLE EMPLEADO */}
-        <Route path="/empleado/:id" element={<EmpleadoDetalle />} />
+        <Route path="/empleado/:id" element={<RequireAuth><EmpleadoDetalle /></RequireAuth>} />
 
         {/* 🔥 CUALQUIER RUTA → LOGIN */}
         <Route path="*" element={<Navigate to="/" replace />} />

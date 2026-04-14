@@ -65,10 +65,10 @@ function Organizacion() {
             />
 
             <h3>{emp.nombre}</h3>
-            <p>{emp.cargo}</p>
+            <p>{emp.cargo || "Sin cargo"}</p>
 
             <span>
-              {emp.departamento || "Sin departamento"}
+              {emp.departamento || emp.departamentos?.nombre || "Sin departamento"}
             </span>
 
           </div>

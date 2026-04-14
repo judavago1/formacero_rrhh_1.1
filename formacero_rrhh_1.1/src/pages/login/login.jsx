@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { API } from "../../utils/api";
 import "./login.css";
 
-const API = "https://miniature-train-pj9wvw47jw7xc46-3001.app.github.dev/api";
 function Login() {
 
   const [correo, setCorreo] = useState("");
@@ -34,11 +34,16 @@ function Login() {
         body: JSON.stringify({ correo, password })
       });
 
-      const data = await res.json();
+      const text = await res.text();
+      let data = {};
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch (parseError) {
+        console.warn("Login response no es JSON:", parseError, text);
+      }
 
-      // 🔥 VALIDACIÓN
       if (!res.ok) {
-        setError(data.message || "Credenciales incorrectas ❌");
+        setError(data.message || text || "Credenciales incorrectas ❌");
         return;
       }
 

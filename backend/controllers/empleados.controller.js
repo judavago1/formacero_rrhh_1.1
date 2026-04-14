@@ -1,13 +1,39 @@
 import { supabase } from "../config/supabase.js";
 import bcrypt from "bcrypt";
 
-// 🔹 OBTENER EMPLEADOS ACTIVOS
+const findOrCreateDepartamentoId = async (nombre) => {
+  if (!nombre?.trim()) return null;
+
+  const { data, error } = await supabase
+    .from("departamentos")
+    .select("id")
+    .eq("nombre", nombre)
+    .limit(1)
+    .single();
+
+  if (error && error.code !== "PGRST116") {
+    throw error;
+  }
+
+  if (data?.id) return data.id;
+
+  const { data: insertData, error: insertError } = await supabase
+    .from("departamentos")
+    .insert([{ nombre }])
+    .select("id")
+    .single();
+
+  if (insertError) throw insertError;
+
+  return insertData?.id || null;
+};
+
+// 🔹 OBTENER EMPLEADOS
 export const getEmpleados = async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("empleados")
-      .select("*")
-      .eq("estado", "activo");
+      .select("id, nombre, correo, telefono, salario, fecha_ingreso, fecha_nacimiento, documento, departamento_id, departamentos(nombre)");
 
     if (error) throw error;
 
@@ -23,8 +49,7 @@ export const countEmpleados = async (req, res) => {
   try {
     const { count, error } = await supabase
       .from("empleados")
-      .select("*", { count: "exact", head: true })
-      .eq("estado", "activo");
+      .select("*", { count: "exact", head: true });
 
     if (error) throw error;
 
@@ -42,31 +67,37 @@ export const createEmpleado = async (req, res) => {
       nombre,
       cedula,
       correo,
-      cargo,
       salario,
       fechaIngreso,
       departamento,
-      fechaNacimiento
+      fechaNacimiento,
+      telefono,
+      direccion
     } = req.body;
 
-    if (!nombre || !cedula || !cargo) {
+    if (!nombre || !cedula || !correo) {
       return res.status(400).json({ message: "Faltan campos obligatorios" });
     }
 
-    // 1️⃣ Insertar empleado
+    const departamentoId = departamento
+      ? await findOrCreateDepartamentoId(departamento)
+      : null;
+
+    const empleadoPayload = {
+      nombre,
+      documento: cedula,
+      correo,
+      salario: salario || null,
+      fecha_ingreso: fechaIngreso || null,
+      fecha_nacimiento: fechaNacimiento || null,
+      telefono: telefono || null,
+      direccion: direccion || null,
+      departamento_id: departamentoId
+    };
+
     const { data: empleadoData, error: empError } = await supabase
       .from("empleados")
-      .insert([{
-        nombre,
-        documento: cedula,
-        correo,
-        cargo,
-        salario,
-        fecha_ingreso: fechaIngreso,
-        departamento: departamento || null,
-        estado: "activo",
-        fecha_nacimiento: fechaNacimiento || null
-      }])
+      .insert([empleadoPayload])
       .select();
 
     if (empError) throw empError;
@@ -108,15 +139,23 @@ export const createEmpleado = async (req, res) => {
 export const updateEmpleado = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nombre, cargo, departamento } = req.body;
+    const { nombre, departamento } = req.body;
+
+    const departamentoId = departamento
+      ? await findOrCreateDepartamentoId(departamento)
+      : null;
+
+    const updateData = {
+      nombre
+    };
+
+    if (departamentoId !== null) {
+      updateData.departamento_id = departamentoId;
+    }
 
     const { error } = await supabase
       .from("empleados")
-      .update({
-        nombre,
-        cargo,
-        departamento: departamento || null
-      })
+      .update(updateData)
       .eq("id", id);
 
     if (error) throw error;
@@ -151,7 +190,7 @@ export const deleteEmpleado = async (req, res) => {
       return res.status(404).json({ message: "Empleado no encontrado" });
     }
 
-    // 2️⃣ Insertar en exempleados
+    // 2️⃣ Intentar insertar en exempleados si la tabla existe
     const { error: insertError } = await supabase
       .from("exempleados")
       .insert([{
@@ -159,14 +198,14 @@ export const deleteEmpleado = async (req, res) => {
         documento: empleado.documento,
         correo: empleado.correo,
         telefono: empleado.telefono || null,
-        cargo: empleado.cargo,
-        departamento: empleado.departamento || null,
         fecha_ingreso: empleado.fecha_ingreso,
         fecha_retiro: new Date(),
         razon_despido: motivo
       }]);
 
-    if (insertError) throw insertError;
+    if (insertError && insertError.code !== "PGRST205") {
+      throw insertError;
+    }
 
     // 3️⃣ Eliminar de empleados
     const { error: deleteError } = await supabase
@@ -177,7 +216,7 @@ export const deleteEmpleado = async (req, res) => {
     if (deleteError) throw deleteError;
 
     res.json({
-      message: "Empleado movido a exempleados correctamente"
+      message: "Empleado eliminado correctamente"
     });
 
   } catch (err) {
@@ -194,7 +233,12 @@ export const getExEmpleados = async (req, res) => {
       .select("*")
       .order("fecha_retiro", { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === "PGRST205") {
+        return res.json([]);
+      }
+      throw error;
+    }
 
     res.json(data);
   } catch (err) {
@@ -213,7 +257,12 @@ export const deleteExEmpleado = async (req, res) => {
       .delete()
       .eq("id", id);
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === "PGRST205") {
+        return res.status(404).json({ message: "No existe historial de exempleados" });
+      }
+      throw error;
+    }
 
     res.json({ message: "Exempleado eliminado definitivamente" });
   } catch (err) {
@@ -229,8 +278,7 @@ export const getCumpleaneros = async (req, res) => {
 
     const { data, error } = await supabase
       .from("empleados")
-      .select("id, nombre, fecha_nacimiento")
-      .eq("estado", "activo");
+      .select("id, nombre, fecha_nacimiento");
 
     if (error) throw error;
 
@@ -255,7 +303,7 @@ export const searchEmpleado = async (req, res) => {
 
     const { data, error } = await supabase
       .from("empleados")
-      .select("id, nombre, cargo, departamento")
+      .select("id, nombre, documento, correo, telefono, departamento_id, departamentos(nombre)")
       .ilike("nombre", `%${q}%`)
       .limit(5);
 
@@ -275,7 +323,7 @@ export const getEmpleadoById = async (req, res) => {
 
     const { data, error } = await supabase
       .from("empleados")
-      .select("*")
+      .select("*, departamentos(nombre)")
       .eq("id", id)
       .single();
 
@@ -299,7 +347,7 @@ export const getCertificadoEmpleado = async (req, res) => {
 
     const { data, error } = await supabase
       .from("empleados")
-      .select("nombre, cargo, salario, fecha_ingreso")
+      .select("nombre, salario, fecha_ingreso")
       .eq("id", id)
       .single();
 

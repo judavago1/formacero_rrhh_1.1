@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { fetchWithAuth } from "../../utils/api";
 import "./certificado-laboral.css";
-
-const API = "http://localhost:3001/api";
 
 function CertificadoLaboral() {
 
@@ -55,17 +54,9 @@ function CertificadoLaboral() {
         let res;
 
         if (user.rol === "admin") {
-          res = await fetch(`${API}/empleados`, {
-            headers: {
-              "Authorization": `Bearer ${token}`
-            }
-          });
+          res = await fetchWithAuth("/empleados");
         } else {
-          res = await fetch(`${API}/empleados/${user.id}`, {
-            headers: {
-              "Authorization": `Bearer ${token}`
-            }
-          });
+          res = await fetchWithAuth(`/empleados/${user.id}`);
         }
 
         if (!res.ok) {
@@ -101,11 +92,7 @@ function CertificadoLaboral() {
       setError("");
       setVisible(false);
 
-      const res = await fetch(`${API}/empleados/certificado/${selected}`, {
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      });
+      const res = await fetchWithAuth(`/empleados/certificado/${selected}`);
 
       if (!res.ok) {
         throw new Error("Error al generar certificado");
@@ -130,7 +117,7 @@ function CertificadoLaboral() {
       const certificateText = `
 La empresa Formacero S.A.S certifica que el(la) señor(a) ${employee.nombre}
 se encuentra vinculado(a) laboralmente con nuestra organización desempeñando
-el cargo de ${employee.cargo} desde el ${fechaIngreso} hasta la fecha.
+el cargo de ${employee.cargo || "No disponible"} desde el ${fechaIngreso} hasta la fecha.
 
 Actualmente devenga un salario mensual de $${salario}.
 

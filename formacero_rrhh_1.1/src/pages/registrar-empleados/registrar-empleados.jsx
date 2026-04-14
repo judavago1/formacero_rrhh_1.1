@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { fetchWithAuth } from "../../utils/api";
 import "./registrar-empleados.css";
 
 function RegistrarEmpleados() {
@@ -67,12 +68,8 @@ function RegistrarEmpleados() {
       // 🔐 TOKEN AGREGADO
       const token = localStorage.getItem("token");
 
-      const res = await fetch("http://localhost:3001/api/empleados", {
+      const res = await fetchWithAuth("/empleados", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}` // 🔥 AQUÍ ESTÁ LA MAGIA
-        },
         body: JSON.stringify(nuevoEmpleado)
       });
 
@@ -164,8 +161,8 @@ Contraseña: ${data.credenciales?.password || "N/A"}
               </div>
 
               <div className="form-group">
-                <label>Cargo</label>
-                <input type="text" id="cargo" value={form.cargo} onChange={handleChange} required />
+                <label>Cargo (opcional)</label>
+                <input type="text" id="cargo" value={form.cargo} onChange={handleChange} />
               </div>
 
               <div className="form-group">

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { fetchWithAuth } from "../../utils/api";
 import "./reportes.css";
 
 function Reportes() {
@@ -13,11 +14,7 @@ function Reportes() {
 
         const token = localStorage.getItem("token");
 
-        const res = await fetch("http://localhost:3001/api/reportes", {
-          headers: {
-            "Authorization": `Bearer ${token}`
-          }
-        });
+        const res = await fetchWithAuth("/reportes");
 
         const data = await res.json();
 
@@ -42,12 +39,8 @@ function Reportes() {
 
       const token = localStorage.getItem("token");
 
-      const res = await fetch(`http://localhost:3001/api/reportes/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        }
+      const res = await fetchWithAuth(`/reportes/${id}`, {
+        method: "PUT"
       });
 
       if(!res.ok){

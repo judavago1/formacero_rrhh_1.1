@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { fetchWithAuth } from "../../utils/api";
 import "../../layout.css";
 import "./empleado-detalle.css";
 
@@ -22,11 +23,7 @@ function EmpleadoDetalle() {
 
     const getEmpleado = async () => {
       try {
-        const res = await fetch(`http://localhost:3001/api/empleados/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
+        const res = await fetchWithAuth(`/empleados/${id}`);
 
         if (!res.ok) throw new Error("Empleado no encontrado");
 

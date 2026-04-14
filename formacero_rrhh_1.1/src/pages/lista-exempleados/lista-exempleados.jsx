@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { fetchWithAuth } from "../../utils/api";
 import "./lista-exempleados.css";
 
 function ListaExempleados() {
@@ -16,11 +17,7 @@ function ListaExempleados() {
   // 🔥 OBTENER EXEMPLEADOS DESDE BACKEND
   const getExempleados = async () => {
     try {
-      const res = await fetch("http://localhost:3001/api/empleados/exempleados", {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+const res = await fetchWithAuth("/empleados/exempleados");
 
       if (!res.ok) {
         throw new Error("Error en la respuesta del servidor");
@@ -71,11 +68,8 @@ function ListaExempleados() {
     if (!confirmDelete) return;
 
     try {
-      const res = await fetch(`http://localhost:3001/api/empleados/exempleados/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}` // ✅ TOKEN
-        }
+      const res = await fetchWithAuth(`/empleados/exempleados/${id}`, {
+        method: "DELETE"
       });
 
       if (!res.ok) {

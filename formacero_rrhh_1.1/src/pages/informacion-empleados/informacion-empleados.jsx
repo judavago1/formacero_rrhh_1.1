@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { fetchWithAuth } from "../../utils/api";
 import "./informacion-empleados.css";
 
 function InformacionEmpleados() {
@@ -17,11 +18,7 @@ function InformacionEmpleados() {
   // 🔹 OBTENER EMPLEADOS DESDE BACKEND
   const getEmployees = async () => {
     try {
-      const res = await fetch("http://localhost:3001/api/empleados", {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+      const res = await fetchWithAuth("/empleados");
 
       const data = await res.json();
 
@@ -30,8 +27,8 @@ function InformacionEmpleados() {
       const formatted = data.map(emp => ({
         id: emp.id,
         nombre: emp.nombre,
-        cargo: emp.cargo,
-        departamento: emp.departamento,
+        cargo: emp.cargo || "",
+        departamento: emp.departamento || emp.departamentos?.nombre || "",
         estado: emp.estado || "activo",
         documentos: [
           "📄 Contrato Laboral.pdf",
@@ -63,7 +60,7 @@ function InformacionEmpleados() {
   // 🔍 FILTRO
   const filteredEmployees = employees.filter(emp =>
     emp.nombre.toLowerCase().includes(search.toLowerCase()) ||
-    emp.cargo.toLowerCase().includes(search.toLowerCase()) ||
+    (emp.cargo || "").toLowerCase().includes(search.toLowerCase()) ||
     (emp.departamento || "").toLowerCase().includes(search.toLowerCase())
   );
 
@@ -81,15 +78,10 @@ function InformacionEmpleados() {
     const newDepartment = prompt("Editar departamento:", employee.departamento);
 
     try {
-      await fetch(`http://localhost:3001/api/empleados/${employee.id}`, {
+      await fetchWithAuth(`/empleados/${employee.id}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}` // ✅ TOKEN
-        },
         body: JSON.stringify({
           nombre: newName || employee.nombre,
-          cargo: newPosition || employee.cargo,
           departamento: newDepartment || employee.departamento
         })
       });
@@ -114,13 +106,9 @@ function InformacionEmpleados() {
     }
 
     try {
-      await fetch(`http://localhost:3001/api/empleados/${id}`, {
+      await fetchWithAuth(`/empleados/${id}`, {
         method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}` // ✅ TOKEN
-        },
-        body: JSON.stringify({ motivo }),
+        body: JSON.stringify({ motivo })
       });
 
       alert("Empleado eliminado correctamente ✅");
