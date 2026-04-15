@@ -12,18 +12,28 @@ function Dashboard() {
   const [search, setSearch] = useState("");
   const [results, setResults] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // ✅ TOKEN
   const token = localStorage.getItem("token");
 
   // 👤 USUARIO
   const user = JSON.parse(localStorage.getItem("user"));
+  const firstName = user?.nombre?.trim()?.split(" ")[0] || "Usuario";
 
   // 🔒 LOGOUT
   const handleLogout = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     navigate("/login");
+  };
+
+  const cancelLogout = () => {
+    setShowLogoutConfirm(false);
   };
 
   // 🔍 BUSCADOR
@@ -156,14 +166,39 @@ function Dashboard() {
           <img src="https://i.pravatar.cc/40" alt="Usuario"/>
 
           <span>
-            {user?.nombre || "Usuario"}
+            {firstName}
           </span>
 
-          <button className="logout-btn" onClick={handleLogout}>
-            Logout
+          <button
+            className="logout-btn"
+            onClick={handleLogout}
+            aria-label="Cerrar sesión"
+            title="Cerrar sesión"
+          >
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+              <path d="M10 17l5-5-5-5v3H3v4h7v3zm9-14H5c-1.1 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z" />
+            </svg>
           </button>
         </div>
       </header>
+
+      {showLogoutConfirm && (
+        <div className="confirm-overlay">
+          <div className="confirm-modal">
+            <div className="confirm-icon">⚠️</div>
+            <h2>¿Cerrar sesión?</h2>
+            <p>Confirma si deseas salir de tu cuenta. Se cerrará tu sesión actual.</p>
+            <div className="confirm-actions">
+              <button className="confirm-btn cancel" onClick={cancelLogout}>
+                Cancelar
+              </button>
+              <button className="confirm-btn confirm" onClick={confirmLogout}>
+                Cerrar sesión
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* HERO */}
       <section className="hero">

@@ -7,18 +7,7 @@ const buildApiUrl = () => {
     return "http://localhost:3001/api";
   }
 
-  const { protocol, hostname, host } = window.location;
-
-  if (/github\.dev$|githubpreview\.dev$/.test(host)) {
-    const apiHost = host.replace(/-\d+(?=\.app\.)/, "-3001");
-    return `${protocol}//${apiHost}/api`;
-  }
-
-  if (hostname === "localhost" || hostname === "127.0.0.1") {
-    return `${protocol}//${hostname}:3001/api`;
-  }
-
-  return `${protocol}//${hostname}:3001/api`;
+  return "/api";
 };
 
 export const API = buildApiUrl();

@@ -4,26 +4,42 @@ import jwt from "jsonwebtoken";
 
 export const login = async (req, res) => {
 
-  const { correo, password } = req.body;
+  const { usuario, correo, password } = req.body;
+  const loginValue = (usuario || correo || "").trim();
 
-  if (!correo || !password) {
+  if (!loginValue || !password) {
     return res.status(400).json({
-      message: "Correo y contraseña son obligatorios"
+      message: "Usuario y contraseña son obligatorios"
     });
   }
 
   try {
 
-    // 🔍 Buscar usuario
-    const { data, error } = await supabase
+    // 🔍 Buscar usuario por correo o cédula
+    let { data, error } = await supabase
       .from("usuarios")
       .select("*")
-      .eq("correo", correo)
+      .eq("correo", loginValue)
       .limit(1);
 
     if (error) {
       console.error("ERROR DB:", error);
       return res.status(500).json({ message: "Error servidor" });
+    }
+
+    if (!data || data.length === 0) {
+      const fallback = await supabase
+        .from("usuarios")
+        .select("*")
+        .eq("username", loginValue)
+        .limit(1);
+
+      if (fallback.error) {
+        console.error("ERROR DB fallback:", fallback.error);
+        return res.status(500).json({ message: "Error servidor" });
+      }
+
+      data = fallback.data;
     }
 
     if (!data || data.length === 0) {

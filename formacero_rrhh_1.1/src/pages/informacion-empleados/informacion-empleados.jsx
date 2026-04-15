@@ -11,6 +11,9 @@ function InformacionEmpleados() {
   const [openRow, setOpenRow] = useState(null);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deleteCandidate, setDeleteCandidate] = useState(null);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deleteError, setDeleteError] = useState("");
 
   // ✅ TOKEN
   const token = localStorage.getItem("token");
@@ -93,22 +96,29 @@ function InformacionEmpleados() {
   }
 
   // ❌ ELIMINAR EMPLEADO
-  const handleDelete = async (id) => {
+  const handleDelete = (id, nombre) => {
+    setDeleteCandidate({ id, nombre });
+    setDeleteReason("");
+    setDeleteError("");
+  };
 
-    const confirmDelete = window.confirm("¿Seguro que deseas eliminar este empleado?");
-    if (!confirmDelete) return;
+  const cancelDelete = () => {
+    setDeleteCandidate(null);
+    setDeleteReason("");
+    setDeleteError("");
+  };
 
-    let motivo = prompt("Ingresa el motivo de la eliminación:");
-
-    if (!motivo || motivo.trim() === "") {
-      alert("El motivo es obligatorio ❌");
+  const confirmDelete = async () => {
+    if (!deleteCandidate) return;
+    if (!deleteReason.trim()) {
+      setDeleteError("El motivo es obligatorio para eliminar");
       return;
     }
 
     try {
-      const res = await fetchWithAuth(`/empleados/${id}`, {
+      const res = await fetchWithAuth(`/empleados/${deleteCandidate.id}`, {
         method: "DELETE",
-        body: JSON.stringify({ motivo })
+        body: JSON.stringify({ motivo: deleteReason.trim() })
       });
 
       const text = await res.text();
@@ -119,16 +129,20 @@ function InformacionEmpleados() {
         console.warn("Delete response no es JSON:", parseError, text);
       }
 
+      console.log('Delete response:', res.status, data);
+
       if (!res.ok) {
         throw new Error(data.message || text || "Error al eliminar empleado");
       }
 
       await getEmployees();
+      cancelDelete();
       alert(data.message || "Empleado eliminado correctamente ✅");
+      navigate("/lista-exempleados");
 
     } catch (error) {
       console.error("Error eliminando:", error);
-      alert(error.message || "Error al eliminar ❌");
+      setDeleteError(error.message || "Error al eliminar ❌");
     }
   };
 
@@ -163,6 +177,36 @@ function InformacionEmpleados() {
         <h1>Información de Empleados</h1>
         <p>Gestión y consulta del personal activo</p>
       </section>
+
+      {deleteCandidate && (
+        <div className="confirm-overlay">
+          <div className="confirm-modal">
+            <div className="confirm-badge">Eliminar</div>
+            <h2>¿Eliminar empleado?</h2>
+            <p>Vas a eliminar a <strong>{deleteCandidate.nombre}</strong>. Esta acción requiere un motivo.</p>
+
+            <label htmlFor="delete-reason">Motivo de eliminación</label>
+            <textarea
+              id="delete-reason"
+              value={deleteReason}
+              onChange={(e) => setDeleteReason(e.target.value)}
+              placeholder="Escribe el motivo aquí..."
+              rows={4}
+            />
+
+            {deleteError && <p className="confirm-error">{deleteError}</p>}
+
+            <div className="confirm-actions">
+              <button type="button" className="confirm-btn cancel" onClick={cancelDelete}>
+                Cancelar
+              </button>
+              <button type="button" className="confirm-btn confirm" onClick={confirmDelete}>
+                Eliminar ahora
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* TABLA */}
       <section className="table-section">
@@ -215,7 +259,7 @@ function InformacionEmpleados() {
                       <button className="edit-btn" onClick={() => editEmployee(index)}>
                         Editar
                       </button>
-                      <button onClick={() => handleDelete(emp.id)} className="delete-btn">
+                      <button onClick={() => handleDelete(emp.id, emp.nombre)} className="delete-btn">
                         Eliminar
                       </button>
                     </td>

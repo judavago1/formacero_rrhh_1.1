@@ -195,15 +195,18 @@ export const deleteEmpleado = async (req, res) => {
       .from("exempleados")
       .insert([{
         nombre: empleado.nombre,
-        documento: empleado.documento,
         correo: empleado.correo,
         telefono: empleado.telefono || null,
-        fecha_ingreso: empleado.fecha_ingreso,
-        fecha_retiro: new Date(),
+        fecha_salida: new Date(),
         razon_despido: motivo
       }]);
 
-    if (insertError && insertError.code !== "PGRST205") {
+    if (insertError) {
+      if (insertError.code === "PGRST205") {
+        return res.status(500).json({
+          message: "La tabla 'exempleados' no existe en la base de datos. Crea esta tabla para poder mover empleados eliminados."
+        });
+      }
       throw insertError;
     }
 
@@ -241,11 +244,13 @@ export const getExEmpleados = async (req, res) => {
     const { data, error } = await supabase
       .from("exempleados")
       .select("*")
-      .order("fecha_retiro", { ascending: false });
+      .order("id", { ascending: false });
 
     if (error) {
       if (error.code === "PGRST205") {
-        return res.json([]);
+        return res.status(500).json({
+          message: "La tabla 'exempleados' no existe en la base de datos. Crea esta tabla para ver los exempleados."
+        });
       }
       throw error;
     }

@@ -133,3 +133,19 @@ font-size:0.8rem;
 }
 
 }
+
+.page-error,
+.page-error-message {
+  margin: 20px auto;
+  max-width: 700px;
+  padding: 20px;
+  border-radius: 14px;
+  background: #fef3f3;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+  text-align: center;
+}
+
+.page-error-message p {
+  margin: 0;
+}

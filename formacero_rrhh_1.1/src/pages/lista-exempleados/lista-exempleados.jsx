@@ -10,6 +10,7 @@ function ListaExempleados() {
   const [openRow, setOpenRow] = useState(null);
   const [exempleados, setExempleados] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   // ✅ TOKEN
   const token = localStorage.getItem("token");
@@ -17,10 +18,12 @@ function ListaExempleados() {
   // 🔥 OBTENER EXEMPLEADOS DESDE BACKEND
   const getExempleados = async () => {
     try {
-const res = await fetchWithAuth("/empleados/exempleados");
+      const res = await fetchWithAuth("/empleados/exempleados");
 
       if (!res.ok) {
-        throw new Error("Error en la respuesta del servidor");
+        const text = await res.text();
+        const parsed = text ? JSON.parse(text) : {};
+        throw new Error(parsed.message || "Error en la respuesta del servidor");
       }
 
       const data = await res.json();
@@ -30,17 +33,18 @@ const res = await fetchWithAuth("/empleados/exempleados");
       const formatted = data.map(emp => ({
         id: emp.id,
         nombre: emp.nombre,
-        cargo: emp.cargo,
-        departamento: emp.departamento,
-        ingreso: emp.fecha_ingreso,
-        retiro: emp.fecha_retiro,
-        motivo: emp.razon_despido
+        cargo: emp.cargo || "",
+        departamento: emp.departamento || "",
+        ingreso: emp.fecha_ingreso || emp.fecha_ingreso,
+        retiro: emp.fecha_salida || emp.fecha_retiro,
+        motivo: emp.razon_despido || emp.motivo
       }));
 
       setExempleados(formatted);
 
     } catch (error) {
       console.error("Error cargando exempleados:", error);
+      setError(error.message || "Error cargando exempleados");
     } finally {
       setLoading(false);
     }
@@ -93,6 +97,11 @@ const res = await fetchWithAuth("/empleados/exempleados");
 
   return (
     <div>
+      {error && (
+        <div className="page-error">
+          <p>{error}</p>
+        </div>
+      )}
 
       {/* HEADER */}
       <header className="header">
@@ -183,6 +192,12 @@ const res = await fetchWithAuth("/empleados/exempleados");
       </section>
 
       {/* FOOTER */}
+      {error && (
+        <div className="page-error-message">
+          <p>{error}</p>
+        </div>
+      )}
+
       <footer className="footer">
         © {new Date().getFullYear()} Formacero
       </footer>
