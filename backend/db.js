@@ -93,15 +93,14 @@ export const db = {
 
       // 🔥 INSERT usuarios
       else if (sql.includes("INSERT INTO usuarios")) {
-        const [nombre, correo, password, rol, empleado_id, username] = params;
+        const [nombre, correo, password, rol, empleado_id] = params;
 
         const res = await supabase.from("usuarios").insert([{
           nombre,
           correo,
           password,
           rol,
-          empleado_id,
-          username
+          empleado_id
         }]);
 
         data = res.data;

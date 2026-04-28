@@ -31,19 +31,18 @@ const hasValidEmailConfig = () => {
 };
 
 export const login = async (req, res) => {
-
   const { usuario, correo, password } = req.body;
-  const loginValue = (usuario || correo || "").trim();
+  const loginValue = (correo || usuario || "").trim().toLowerCase();
 
   if (!loginValue || !password) {
     return res.status(400).json({
-      message: "Usuario y contraseña son obligatorios"
+      message: "Correo y contraseña son obligatorios"
     });
   }
 
   try {
 
-    // 🔍 Buscar usuario por correo o cédula
+    // 🔍 Buscar usuario por correo
     let { data, error } = await supabase
       .from("usuarios")
       .select("*")
@@ -53,21 +52,6 @@ export const login = async (req, res) => {
     if (error) {
       console.error("ERROR DB:", error);
       return res.status(500).json({ message: "Error servidor" });
-    }
-
-    if (!data || data.length === 0) {
-      const fallback = await supabase
-        .from("usuarios")
-        .select("*")
-        .eq("username", loginValue)
-        .limit(1);
-
-      if (fallback.error) {
-        console.error("ERROR DB fallback:", fallback.error);
-        return res.status(500).json({ message: "Error servidor" });
-      }
-
-      data = fallback.data;
     }
 
     if (!data || data.length === 0) {

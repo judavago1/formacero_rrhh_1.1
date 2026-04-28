@@ -108,7 +108,7 @@ function RegistrarEmpleados() {
 ✅ Empleado registrado correctamente
 
 🔐 Credenciales de acceso:
-Usuario: ${data.credenciales?.username || "N/A"}
+Correo: ${data.credenciales?.correo || "N/A"}
 Contraseña: ${data.credenciales?.password || "N/A"}
 `);
 

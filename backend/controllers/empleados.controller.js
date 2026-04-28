@@ -115,8 +115,7 @@ export const createEmpleado = async (req, res) => {
         correo,
         password: hashedPassword,
         rol: "empleado",
-        empleado_id: empleadoId,
-        username: cedula
+        empleado_id: empleadoId
       }]);
 
     if (userError) throw userError;
@@ -124,7 +123,7 @@ export const createEmpleado = async (req, res) => {
     res.json({
       message: "Empleado y usuario creados",
       credenciales: {
-        username: cedula,
+        correo,
         password: defaultPassword
       }
     });

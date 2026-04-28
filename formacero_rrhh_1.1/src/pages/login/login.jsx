@@ -5,7 +5,7 @@ import "./login.css";
 
 function Login() {
 
-  const [usuario, setUsuario] = useState("");
+  const [correo, setCorreo] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
@@ -24,11 +24,11 @@ function Login() {
 
     setError("");
 
-    const loginValue = usuario.trim();
+    const loginValue = correo.trim().toLowerCase();
     const passwordValue = password;
 
     if (!loginValue || !passwordValue) {
-      setError("Usuario y contraseña son obligatorios");
+      setError("Correo y contraseña son obligatorios");
       return;
     }
 
@@ -39,7 +39,7 @@ function Login() {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ usuario: loginValue, password: passwordValue })
+        body: JSON.stringify({ correo: loginValue, password: passwordValue })
       });
 
       const text = await res.text();
@@ -95,10 +95,10 @@ function Login() {
         <h2>Iniciar Sesión</h2>
 
         <input
-          type="text"
-          placeholder="Correo o cédula"
-          value={usuario}
-          onChange={(e) => setUsuario(e.target.value)}
+          type="email"
+          placeholder="Correo"
+          value={correo}
+          onChange={(e) => setCorreo(e.target.value)}
           required
         />
 
