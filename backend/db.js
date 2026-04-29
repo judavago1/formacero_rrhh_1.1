@@ -40,7 +40,15 @@ export const db = {
         }
 
         else if (sql.includes("FROM reportes")) {
-          const res = await supabase.from("reportes").select("*");
+          let query = supabase.from("reportes").select("*");
+
+          if (sql.includes("WHERE id = ?")) {
+            query = query.eq("id", params[0]);
+          } else if (sql.includes("WHERE empleado_id = ?")) {
+            query = query.eq("empleado_id", params[0]);
+          }
+
+          const res = await query;
           console.log("Supabase select reportes res:", res);
           data = res.data || [];
           error = res.error;

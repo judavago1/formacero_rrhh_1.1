@@ -218,27 +218,6 @@ function EmpleadoDetalle() {
           </div>
         )}
 
-
-              <p><strong>Cédula:</strong> {empleado.documento}</p>
-              <p><strong>Correo:</strong> {empleado.correo}</p>
-              <p><strong>Departamento:</strong> {empleado.departamento || "Sin asignar"}</p>
-              <p><strong>Salario:</strong> ${empleado.salario}</p>
-
-              <p><strong>Ingreso:</strong> {formatFecha(empleado.fecha_ingreso)}</p>
-              <p><strong>Nacimiento:</strong> {formatFecha(empleado.fecha_nacimiento)}</p>
-
-              <p>
-                <strong>Estado:</strong>{" "}
-                <span className={empleado.estado === "activo" ? "active" : "inactive"}>
-                  {empleado.estado}
-                </span>
-              </p>
-
-            </div>
-
-          </div>
-        )}
-
         {activeSection === "reportes" && canViewAssignedReports && (
           <div className="reportes-panel">
             <h2>Reportes asignados</h2>

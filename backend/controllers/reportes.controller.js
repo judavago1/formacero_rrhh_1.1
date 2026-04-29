@@ -101,7 +101,12 @@ export const responderReporte = (req, res) => {
       return res.status(404).json({ message: "Reporte no encontrado" });
     }
 
-    if (checkData[0].empleado_id !== req.user.empleado_id) {
+    const currentEmpleadoId = String(req.user.empleado_id || req.user.id);
+    const reporteEmpleadoId = String(checkData[0].empleado_id);
+
+    console.log("[DEBUG responderReporte] currentEmpleadoId=", currentEmpleadoId, "reporteEmpleadoId=", reporteEmpleadoId, "req.user=", req.user);
+
+    if (reporteEmpleadoId !== currentEmpleadoId) {
       return res.status(403).json({ message: "No tienes permiso para responder este reporte" });
     }
 

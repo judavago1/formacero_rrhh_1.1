@@ -31,9 +31,6 @@ router.post("/:id/responder", upload.single('archivo_excusa'), responderReporte)
 // Crear, actualizar y eliminar requieren admin
 router.use(requireAdmin);
 router.post("/", createReporte);
-// Crear, actualizar y eliminar requieren admin
-router.use(requireAdmin);
-router.post("/", crearReporte);
 router.put("/:id", updateReporte);
 router.delete("/:id", deleteReporte);
 
