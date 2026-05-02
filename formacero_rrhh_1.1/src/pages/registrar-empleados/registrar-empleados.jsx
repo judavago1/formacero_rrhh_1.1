@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { fetchWithAuth } from "../../utils/api";
 import "./registrar-empleados.css";
@@ -6,6 +6,8 @@ import "./registrar-empleados.css";
 function RegistrarEmpleados() {
 
   const [empleados, setEmpleados] = useState([]);
+  const [successAlertMessage, setSuccessAlertMessage] = useState("");
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
 
   const [form, setForm] = useState({
     nombre: "",
@@ -135,14 +137,8 @@ function RegistrarEmpleados() {
 
       setPreview(null);
       setDocumentos([]);
-
-      alert(`
-✅ Empleado registrado correctamente
-
-🔐 Credenciales de acceso:
-Correo: ${data.credenciales?.correo || "N/A"}
-Contraseña: ${data.credenciales?.password || "N/A"}
-`);
+      setSuccessAlertMessage("Empleado registrado exitosamente.");
+      setShowSuccessAlert(true);
 
     } catch (error) {
       console.error("Error:", error);
@@ -172,6 +168,18 @@ Contraseña: ${data.credenciales?.password || "N/A"}
       <section className="seccion-registrar-empleados">
 
         <div className="container">
+
+          {showSuccessAlert && (
+            <div className="alert-overlay">
+              <div className="alert-modal">
+                <h2>Empleado registrado exitosamente</h2>
+                <p>{successAlertMessage}</p>
+                <button className="alert-btn" onClick={() => setShowSuccessAlert(false)}>
+                  Aceptar
+                </button>
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit}>
 

@@ -192,6 +192,68 @@ select:focus {
 
 }
 
+.alert-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 2000;
+}
+
+.alert-modal {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 28px 26px;
+    min-width: 320px;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: 0 28px 70px rgba(15, 23, 42, 0.18);
+    text-align: center;
+}
+
+.alert-modal h2 {
+    margin: 0 0 14px;
+    font-size: 1.35rem;
+    color: var(--primary);
+}
+
+.alert-modal p {
+    margin: 0 0 20px;
+    color: var(--text-dark);
+    line-height: 1.6;
+}
+
+.alert-btn {
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.alert-btn:hover {
+    background: #059669;
+    transform: translateY(-1px);
+}
+
+.success-message {
+    background: #ecfdf5;
+    border: 1px solid #34d399;
+    color: #065f46;
+    padding: 14px 18px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    text-align: center;
+    font-weight: 700;
+}
+
 
 .btn:hover {
 

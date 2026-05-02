@@ -11,6 +11,9 @@ function ListaExempleados() {
   const [exempleados, setExempleados] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [deleteCandidate, setDeleteCandidate] = useState(null);
 
   // ✅ TOKEN
   const token = localStorage.getItem("token");
@@ -51,28 +54,38 @@ function ListaExempleados() {
   };
 
   useEffect(() => {
-
-    // 🔥 PROTECCIÓN
     if (!token) {
       navigate("/login");
       return;
     }
 
     getExempleados();
-
   }, [token, navigate]);
+
+  useEffect(() => {
+    if (showSuccessModal) {
+      const timer = setTimeout(() => {
+        setShowSuccessModal(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccessModal]);
 
   function toggleReason(index) {
     setOpenRow(openRow === index ? null : index);
   }
 
   // 🔥 ELIMINAR DEFINITIVO
-  const handleDeleteEx = async (id) => {
-    const confirmDelete = window.confirm("¿Eliminar definitivamente este exempleado?");
-    if (!confirmDelete) return;
+  const handleDeleteEx = (id, nombre) => {
+    setDeleteCandidate({ id, nombre });
+    setShowConfirmModal(true);
+  };
+
+  const confirmDeleteEx = async () => {
+    if (!deleteCandidate) return;
 
     try {
-      const res = await fetchWithAuth(`/empleados/exempleados/${id}`, {
+      const res = await fetchWithAuth(`/empleados/exempleados/${deleteCandidate.id}`, {
         method: "DELETE"
       });
 
@@ -80,14 +93,19 @@ function ListaExempleados() {
         throw new Error("Error al eliminar");
       }
 
-      setExempleados(prev => prev.filter(emp => emp.id !== id));
-
-      alert("Exempleado eliminado definitivamente ✅");
+      setExempleados(prev => prev.filter(emp => emp.id !== deleteCandidate.id));
+      setShowConfirmModal(false);
+      setShowSuccessModal(true);
 
     } catch (error) {
       console.error("Error eliminando exempleado:", error);
       alert("Error al eliminar ❌");
     }
+  };
+
+  const cancelDeleteEx = () => {
+    setShowConfirmModal(false);
+    setDeleteCandidate(null);
   };
 
   // 🟡 LOADING
@@ -169,7 +187,7 @@ function ListaExempleados() {
                     <td>
                       <button
                         className="delete-btn"
-                        onClick={() => handleDeleteEx(emp.id)}
+                        onClick={() => handleDeleteEx(emp.id, emp.nombre)}
                       >
                         Eliminar
                       </button>
@@ -190,6 +208,51 @@ function ListaExempleados() {
 
         </table>
       </section>
+
+      {/* MODAL DE CONFIRMACIÓN */}
+      {showConfirmModal && deleteCandidate && (
+        <div className="confirm-overlay">
+          <div className="confirm-modal">
+            <div className="confirm-icon">🗑️</div>
+            <h2>Confirmar Eliminación Definitiva</h2>
+            <p>¿Estás seguro de que deseas eliminar definitivamente a <strong>{deleteCandidate.nombre}</strong>? Esta acción no se puede deshacer.</p>
+            
+            <div className="confirm-actions">
+              <button 
+                className="confirm-btn cancel" 
+                onClick={cancelDeleteEx}
+              >
+                Cancelar
+              </button>
+              <button 
+                className="confirm-btn confirm" 
+                onClick={confirmDeleteEx}
+              >
+                Eliminar Definitivamente
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE ÉXITO */}
+      {showSuccessModal && (
+        <div className="success-overlay">
+          <div className="success-modal">
+            <div className="success-icon">✅</div>
+            <h2>¡Eliminación Exitosa!</h2>
+            <p>El exempleado ha sido eliminado definitivamente.</p>
+            <div className="success-actions">
+              <button 
+                className="success-btn" 
+                onClick={() => setShowSuccessModal(false)}
+              >
+                Aceptar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* FOOTER */}
       {error && (

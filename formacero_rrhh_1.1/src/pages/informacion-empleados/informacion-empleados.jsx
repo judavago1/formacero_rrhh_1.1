@@ -14,6 +14,7 @@ function InformacionEmpleados() {
   const [deleteCandidate, setDeleteCandidate] = useState(null);
   const [deleteReason, setDeleteReason] = useState("");
   const [deleteError, setDeleteError] = useState("");
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // ✅ TOKEN
   const token = localStorage.getItem("token");
@@ -59,6 +60,16 @@ function InformacionEmpleados() {
     getEmployees();
 
   }, [token, navigate]);
+
+  useEffect(() => {
+    if (showSuccessModal) {
+      const timer = setTimeout(() => {
+        setShowSuccessModal(false);
+        navigate("/lista-exempleados");
+      }, 3000); // Cerrar automáticamente después de 3 segundos y navegar
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccessModal, navigate]);
 
   // 🔍 FILTRO
   const filteredEmployees = employees.filter(emp =>
@@ -137,8 +148,7 @@ function InformacionEmpleados() {
 
       await getEmployees();
       cancelDelete();
-      alert(data.message || "Empleado eliminado correctamente ✅");
-      navigate("/lista-exempleados");
+      setShowSuccessModal(true);
 
     } catch (error) {
       console.error("Error eliminando:", error);
@@ -181,10 +191,10 @@ function InformacionEmpleados() {
       {deleteCandidate && (
         <div className="confirm-overlay">
           <div className="confirm-modal">
-            <div className="confirm-badge">Eliminar</div>
-            <h2>¿Eliminar empleado?</h2>
-            <p>Vas a eliminar a <strong>{deleteCandidate.nombre}</strong>. Esta acción requiere un motivo.</p>
-
+            <div className="confirm-icon">🗑️</div>
+            <h2>Confirmar Eliminación</h2>
+            <p>¿Estás seguro de que deseas eliminar a <strong>{deleteCandidate.nombre}</strong>? Esta acción requiere un motivo y no se puede deshacer.</p>
+            
             <label htmlFor="delete-reason">Motivo de eliminación</label>
             <textarea
               id="delete-reason"
@@ -201,7 +211,26 @@ function InformacionEmpleados() {
                 Cancelar
               </button>
               <button type="button" className="confirm-btn confirm" onClick={confirmDelete}>
-                Eliminar ahora
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE ÉXITO */}
+      {showSuccessModal && (
+        <div className="success-overlay">
+          <div className="success-modal">
+            <div className="success-icon">✅</div>
+            <h2>¡Eliminación Exitosa!</h2>
+            <p>El empleado ha sido eliminado correctamente y movido a la lista de exempleados.</p>
+            <div className="success-actions">
+              <button 
+                className="success-btn" 
+                onClick={() => setShowSuccessModal(false)}
+              >
+                Aceptar
               </button>
             </div>
           </div>

@@ -21,6 +21,7 @@ function EmpleadoDetalle() {
   const [isSaving, setIsSaving] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const currentUser = JSON.parse(localStorage.getItem("user")) || {};
   const currentEmployeeId = currentUser?.empleado_id ?? currentUser?.id;
@@ -112,13 +113,15 @@ function EmpleadoDetalle() {
 
   }, [id, token, navigate, canViewAssignedReports, currentEmployeeId]);
 
-  // Handle tab parameter from URL
   useEffect(() => {
-    const tabParam = searchParams.get("tab");
-    if (tabParam === "reportes") {
-      setActiveSection("reportes");
+    if (showSuccessModal) {
+      const timer = setTimeout(() => {
+        setShowSuccessModal(false);
+        setSuccessMessage("");
+      }, 3000); // Cerrar automáticamente después de 3 segundos
+      return () => clearTimeout(timer);
     }
-  }, [searchParams]);
+  }, [showSuccessModal]);
 
   const handleEditChange = (field, value) => {
     setEditData({ ...editData, [field]: value });
@@ -149,7 +152,8 @@ function EmpleadoDetalle() {
         });
         setIsEditing(false);
         setShowConfirmModal(false);
-        alert('Información actualizada correctamente');
+        setSuccessMessage("Información actualizada correctamente.");
+        setShowSuccessModal(true);
       } else {
         alert('Error al actualizar la información');
       }
@@ -183,7 +187,8 @@ function EmpleadoDetalle() {
         setRespondingTo(null);
         setResponseData({ comentario: '', archivo: null });
         fetchReportes();
-        alert("Respuesta enviada correctamente");
+        setSuccessMessage("Reporte enviado correctamente, pronto recibirás una respuesta.");
+        setShowSuccessModal(true);
       } else {
         alert("Error al enviar la respuesta");
       }
@@ -479,6 +484,25 @@ function EmpleadoDetalle() {
                 disabled={isSaving}
               >
                 {isSaving ? 'Guardando...' : 'Confirmar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE ÉXITO */}
+      {showSuccessModal && (
+        <div className="success-overlay">
+          <div className="success-modal">
+            <div className="success-icon">✅</div>
+            <h2>¡Éxito!</h2>
+            <p>{successMessage || "La acción se completó correctamente."}</p>
+            <div className="success-actions">
+              <button 
+                className="success-btn" 
+                onClick={() => setShowSuccessModal(false)}
+              >
+                Aceptar
               </button>
             </div>
           </div>
