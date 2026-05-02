@@ -33,7 +33,7 @@ export const getEmpleados = async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("empleados")
-      .select("id, nombre, correo, telefono, salario, fecha_ingreso, fecha_nacimiento, documento, departamento_id, departamentos(nombre)");
+      .select("id, nombre, correo, telefono, salario, fecha_ingreso, fecha_nacimiento, documento, cargo, departamento_id, departamentos(nombre)");
 
     if (error) throw error;
 
@@ -67,6 +67,7 @@ export const createEmpleado = async (req, res) => {
       nombre,
       cedula,
       correo,
+      cargo,
       salario,
       fechaIngreso,
       departamento,
@@ -133,6 +134,7 @@ export const createEmpleado = async (req, res) => {
       nombre,
       documento: cedulaNormalizada,
       correo: correoNormalizado,
+      cargo: cargo || null,
       salario: salario || null,
       fecha_ingreso: fechaIngreso || null,
       fecha_nacimiento: fechaNacimiento || null,
@@ -234,7 +236,7 @@ export const createEmpleado = async (req, res) => {
 export const updateEmpleado = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nombre, departamento, telefono, direccion } = req.body;
+    const { nombre, cargo, departamento, telefono, direccion } = req.body;
 
     const departamentoId = departamento
       ? await findOrCreateDepartamentoId(departamento)
@@ -243,6 +245,7 @@ export const updateEmpleado = async (req, res) => {
     const updateData = {};
 
     if (nombre) updateData.nombre = nombre;
+    if (cargo !== undefined) updateData.cargo = cargo;
     if (telefono) updateData.telefono = telefono;
     if (direccion) updateData.direccion = direccion;
     if (departamentoId !== null) {

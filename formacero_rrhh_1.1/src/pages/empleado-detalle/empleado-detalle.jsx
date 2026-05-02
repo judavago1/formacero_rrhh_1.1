@@ -266,6 +266,7 @@ function EmpleadoDetalle() {
 
               <p><strong>Cédula:</strong> {empleado.documento}</p>
               <p><strong>Correo:</strong> {empleado.correo}</p>
+              <p><strong>Cargo:</strong> {empleado.cargo || "Sin cargo"}</p>
               <p><strong>Departamento:</strong> {empleado.departamento || "Sin asignar"}</p>
               <p><strong>Salario:</strong> ${empleado.salario}</p>
 
