@@ -15,7 +15,6 @@ function CertificadoLaboral() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // ✅ TOKEN
   const token = localStorage.getItem("token");
 
   // 🔹 Obtener usuario logueado
@@ -64,8 +63,6 @@ function CertificadoLaboral() {
         }
 
         const data = await res.json();
-
-        // Asegurar array
         setEmployees(Array.isArray(data) ? data : [data]);
 
       } catch (err) {
@@ -115,13 +112,11 @@ function CertificadoLaboral() {
       });
 
       const certificateText = `
-La empresa Formacero S.A.S certifica que el(la) señor(a) ${employee.nombre}
-se encuentra vinculado(a) laboralmente con nuestra organización desempeñando
-el cargo de ${employee.cargo || "No disponible"} desde el ${fechaIngreso} hasta la fecha.
+La empresa FORMACERO S.A.S, identificada con NIT 900.000.000-0, certifica que el(la) señor(a) ${employee.nombre}, se encuentra vinculado(a) laboralmente con nuestra organización desempeñando el cargo de ${employee.cargo || "No disponible"} desde el ${fechaIngreso} hasta la fecha.
 
 Actualmente devenga un salario mensual de $${salario}.
 
-Este certificado se expide a solicitud del interesado(a) el día ${today}.
+La presente certificación se expide a solicitud del interesado(a) el día ${today}, en la ciudad de Bogotá D.C., para los fines que estime convenientes.
 `;
 
       setText(certificateText);
@@ -203,21 +198,45 @@ Este certificado se expide a solicitud del interesado(a) el día ${today}.
 
           </div>
 
+          {/* CERTIFICADO PROFESIONAL */}
           <div
             className="certificate"
             style={{ display: visible ? "block" : "none" }}
           >
 
-            <h2>CERTIFICADO LABORAL</h2>
+            <div className="cert-header">
+              <h2>FORMACERO S.A.S</h2>
+              <p>NIT: 900.000.000-0</p>
+              <p>Bogotá D.C. - Colombia</p>
+            </div>
+
+            <h2 className="cert-title">CERTIFICACIÓN LABORAL</h2>
+
+            <p className="cert-city-date">
+              Bogotá D.C., {new Date().toLocaleDateString("es-CO", {
+                day: "2-digit",
+                month: "long",
+                year: "numeric"
+              })}
+            </p>
 
             <p style={{ whiteSpace: "pre-line", textAlign: "justify" }}>
               {text}
             </p>
 
             <div className="firma">
-              <p>Cordialmente,</p>
+
+              <p>Atentamente,</p>
+
+              <div className="linea-firma"></div>
+
               <strong>Departamento de Recursos Humanos</strong>
               <p>Formacero S.A.S</p>
+
+              <div className="sello">
+                <p>Sello de la empresa</p>
+              </div>
+
             </div>
 
           </div>

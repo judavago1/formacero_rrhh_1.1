@@ -109,6 +109,10 @@ button:hover{
 
     box-shadow:0 8px 30px rgba(0,0,0,0.05);
 
+    font-family:"Times New Roman", serif; /* estilo documento */
+
+    color:#000;
+
 }
 
 
@@ -116,9 +120,9 @@ button:hover{
 
     text-align:center;
 
-    margin-bottom:40px;
+    margin-bottom:30px;
 
-    color:#1e3a8a;
+    color:#000;
 
 }
 
@@ -134,9 +138,106 @@ button:hover{
 }
 
 
+/* =========================
+   HEADER DEL CERTIFICADO
+========================= */
+
+.cert-header{
+
+    text-align:center;
+
+    margin-bottom:20px;
+
+}
+
+.cert-header h2{
+
+    margin:0;
+
+    font-size:20px;
+
+    font-weight:bold;
+
+    color:#000;
+
+}
+
+.cert-header p{
+
+    margin:2px 0;
+
+    font-size:14px;
+
+    color:#333;
+
+}
+
+
+/* =========================
+   TITULO
+========================= */
+
+.cert-title{
+
+    text-align:center;
+
+    margin:25px 0;
+
+    text-decoration:underline;
+
+    font-size:18px;
+
+    font-weight:bold;
+
+    color:#000;
+
+}
+
+
+/* =========================
+   FECHA
+========================= */
+
+.cert-city-date{
+
+    text-align:right;
+
+    margin-bottom:20px;
+
+    font-size:14px;
+
+}
+
+
+/* =========================
+   FIRMA
+========================= */
+
 .firma{
 
     margin-top:80px;
+
+    text-align:center;
+
+}
+
+.linea-firma{
+
+    margin:40px auto 10px auto;
+
+    width:260px;
+
+    border-top:1px solid #000;
+
+}
+
+.sello{
+
+    margin-top:20px;
+
+    font-size:12px;
+
+    color:#666;
 
 }
 
@@ -161,6 +262,15 @@ button:hover{
         left:0;
         top:0;
         width:100%;
+        box-shadow:none;
+        border:none;
+        padding:40px;
+        font-family:"Times New Roman", serif;
+    }
+
+    .cert-header h2,
+    .cert-title{
+        color:#000;
     }
 
 }

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { fetchWithAuth } from "../../utils/api";
 import "./registrar-empleados.css";
@@ -6,12 +6,16 @@ import "./registrar-empleados.css";
 function RegistrarEmpleados() {
 
   const [empleados, setEmpleados] = useState([]);
+  const [successAlertMessage, setSuccessAlertMessage] = useState("");
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
 
   const [form, setForm] = useState({
     nombre: "",
     cedula: "",
     correo: "",
     cargo: "",
+    telefono: "",
+    direccion: "",
     salario: "",
     fechaIngreso: "",
     fechaNacimiento: "",
@@ -76,6 +80,8 @@ function RegistrarEmpleados() {
         cedula: form.cedula,
         correo: form.correo,
         cargo: form.cargo,
+        telefono: form.telefono,
+        direccion: form.direccion,
         salario: form.salario,
         fechaIngreso: form.fechaIngreso,
         fechaNacimiento: form.fechaNacimiento,
@@ -112,6 +118,8 @@ function RegistrarEmpleados() {
         cedula:"",
         correo:"",
         cargo:"",
+        telefono: "",
+        direccion: "",
         salario:"",
         fechaIngreso:"",
         fechaNacimiento:"",
@@ -129,14 +137,8 @@ function RegistrarEmpleados() {
 
       setPreview(null);
       setDocumentos([]);
-
-      alert(`
-✅ Empleado registrado correctamente
-
-🔐 Credenciales de acceso:
-Correo: ${data.credenciales?.correo || "N/A"}
-Contraseña: ${data.credenciales?.password || "N/A"}
-`);
+      setSuccessAlertMessage("Empleado registrado exitosamente.");
+      setShowSuccessAlert(true);
 
     } catch (error) {
       console.error("Error:", error);
@@ -167,7 +169,21 @@ Contraseña: ${data.credenciales?.password || "N/A"}
 
         <div className="container">
 
+          {showSuccessAlert && (
+            <div className="alert-overlay">
+              <div className="alert-modal">
+                <h2>Empleado registrado exitosamente</h2>
+                <p>{successAlertMessage}</p>
+                <button className="alert-btn" onClick={() => setShowSuccessAlert(false)}>
+                  Aceptar
+                </button>
+              </div>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit}>
+
+            <h3>Información Nuevo Empleado</h3>
 
             <div className="form-grid">
 
@@ -209,6 +225,16 @@ Contraseña: ${data.credenciales?.password || "N/A"}
               <div className="form-group">
                 <label>Departamento</label>
                 <input type="text" name="departamento" value={form.departamento} onChange={handleChange} required/>
+              </div>
+
+              <div className="form-group">
+                <label>Teléfono</label>
+                <input type="tel" name="telefono" value={form.telefono} onChange={handleChange} required />
+              </div>
+
+              <div className="form-group">
+                <label>Dirección</label>
+                <input type="text" name="direccion" value={form.direccion} onChange={handleChange} required />
               </div>
 
             </div>
@@ -299,6 +325,8 @@ Contraseña: ${data.credenciales?.password || "N/A"}
                   <p>Cédula: {emp.cedula}</p>
                   <p>Correo: {emp.correo}</p>
                   <p>Cargo: {emp.cargo}</p>
+                  <p>Teléfono: {emp.telefono}</p>
+                  <p>Dirección: {emp.direccion}</p>
                   <p>Salario: ${emp.salario}</p>
                   <p>Ingreso: {emp.fechaIngreso}</p>
                   <p>Nacimiento: {emp.fechaNacimiento}</p>

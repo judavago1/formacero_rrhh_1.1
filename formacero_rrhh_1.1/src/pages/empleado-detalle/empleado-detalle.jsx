@@ -16,6 +16,12 @@ function EmpleadoDetalle() {
   const [loadingReportes, setLoadingReportes] = useState(false);
   const [respondingTo, setRespondingTo] = useState(null);
   const [responseData, setResponseData] = useState({ comentario: '', archivo: null });
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({ nombre: '', telefono: '', direccion: '' });
+  const [isSaving, setIsSaving] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const currentUser = JSON.parse(localStorage.getItem("user")) || {};
   const currentEmployeeId = currentUser?.empleado_id ?? currentUser?.id;
@@ -70,6 +76,11 @@ function EmpleadoDetalle() {
 
         const data = await res.json();
         setEmpleado(data);
+        setEditData({
+          nombre: data.nombre || '',
+          telefono: data.telefono || '',
+          direccion: data.direccion || ''
+        });
 
       } catch (error) {
         console.error(error);
@@ -102,13 +113,57 @@ function EmpleadoDetalle() {
 
   }, [id, token, navigate, canViewAssignedReports, currentEmployeeId]);
 
-  // Handle tab parameter from URL
   useEffect(() => {
-    const tabParam = searchParams.get("tab");
-    if (tabParam === "reportes") {
-      setActiveSection("reportes");
+    if (showSuccessModal) {
+      const timer = setTimeout(() => {
+        setShowSuccessModal(false);
+        setSuccessMessage("");
+      }, 3000); // Cerrar automáticamente después de 3 segundos
+      return () => clearTimeout(timer);
     }
-  }, [searchParams]);
+  }, [showSuccessModal]);
+
+  const handleEditChange = (field, value) => {
+    setEditData({ ...editData, [field]: value });
+  };
+
+  const confirmarGuardar = () => {
+    setShowConfirmModal(true);
+  };
+
+  const guardarCambios = async () => {
+    setIsSaving(true);
+    try {
+      const res = await fetchWithAuth(`/empleados/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          nombre: editData.nombre,
+          telefono: editData.telefono,
+          direccion: editData.direccion
+        })
+      });
+
+      if (res.ok) {
+        setEmpleado({
+          ...empleado,
+          nombre: editData.nombre,
+          telefono: editData.telefono,
+          direccion: editData.direccion
+        });
+        setIsEditing(false);
+        setShowConfirmModal(false);
+        setSuccessMessage("Información actualizada correctamente.");
+        setShowSuccessModal(true);
+      } else {
+        alert('Error al actualizar la información');
+      }
+    } catch (error) {
+      console.error('Error guardando cambios:', error);
+      alert('Error al guardar los cambios');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const formatFecha = (fecha) => {
     if (!fecha) return "-";
@@ -132,7 +187,8 @@ function EmpleadoDetalle() {
         setRespondingTo(null);
         setResponseData({ comentario: '', archivo: null });
         fetchReportes();
-        alert("Respuesta enviada correctamente");
+        setSuccessMessage("Reporte enviado correctamente, pronto recibirás una respuesta.");
+        setShowSuccessModal(true);
       } else {
         alert("Error al enviar la respuesta");
       }
@@ -191,8 +247,17 @@ function EmpleadoDetalle() {
                 {empleado.nombre.charAt(0)}
               </div>
 
-              <div>
-                <h2>{empleado.nombre}</h2>
+              <div className="perfil-info-header">
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editData.nombre}
+                    onChange={(e) => handleEditChange('nombre', e.target.value)}
+                    className="edit-input-nombre"
+                  />
+                ) : (
+                  <h2>{empleado.nombre}</h2>
+                )}
                 <p>{empleado.cargo}</p>
               </div>
             </div>
@@ -201,6 +266,7 @@ function EmpleadoDetalle() {
 
               <p><strong>Cédula:</strong> {empleado.documento}</p>
               <p><strong>Correo:</strong> {empleado.correo}</p>
+              <p><strong>Cargo:</strong> {empleado.cargo || "Sin cargo"}</p>
               <p><strong>Departamento:</strong> {empleado.departamento || "Sin asignar"}</p>
               <p><strong>Salario:</strong> ${empleado.salario}</p>
 
@@ -208,12 +274,71 @@ function EmpleadoDetalle() {
               <p><strong>Nacimiento:</strong> {formatFecha(empleado.fecha_nacimiento)}</p>
 
               <p>
-                <strong>Estado:</strong>{" "}
-                <span className={empleado.estado === "activo" ? "active" : "inactive"}>
-                  {empleado.estado}
-                </span>
+                <strong>Teléfono:</strong> {" "}
+                {isEditing ? (
+                  <input
+                    type="tel"
+                    value={editData.telefono}
+                    onChange={(e) => handleEditChange('telefono', e.target.value)}
+                    className="edit-input"
+                  />
+                ) : (
+                  empleado.telefono || '-'
+                )}
               </p>
 
+              <p>
+                <strong>Dirección:</strong> {" "}
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editData.direccion}
+                    onChange={(e) => handleEditChange('direccion', e.target.value)}
+                    className="edit-input"
+                  />
+                ) : (
+                  empleado.direccion || '-'
+                )}
+              </p>
+
+            </div>
+
+            <div className="edit-actions">
+              {!isEditing ? (
+                <button
+                  type="button"
+                  className="btn-editar"
+                  onClick={() => setIsEditing(true)}
+                >
+                  Editar Información
+                </button>
+              ) : (
+                <div className="edit-buttons">
+                  <button
+                    type="button"
+                    className="btn-guardar"
+                    onClick={confirmarGuardar}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-cancelar"
+                    onClick={() => {
+                      setIsEditing(false);
+                      setEditData({
+                        nombre: empleado.nombre || '',
+                        telefono: empleado.telefono || '',
+                        direccion: empleado.direccion || ''
+                      });
+                    }}
+                    disabled={isSaving}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="contacto-card">
@@ -325,6 +450,65 @@ function EmpleadoDetalle() {
         )}
         </div>
       </section>
+
+      {/* MODAL DE CONFIRMACIÓN */}
+      {showConfirmModal && (
+        <div className="confirm-overlay">
+          <div className="confirm-modal">
+            <div className="confirm-icon">✏️</div>
+            <h2>Confirmar Cambios</h2>
+            <p>¿Estás seguro de que deseas actualizar la información del empleado?</p>
+            
+            <div className="confirm-changes-preview">
+              {editData.nombre !== empleado.nombre && (
+                <p><strong>Nombre:</strong> {empleado.nombre} → {editData.nombre}</p>
+              )}
+              {editData.telefono !== empleado.telefono && (
+                <p><strong>Teléfono:</strong> {empleado.telefono || '-'} → {editData.telefono}</p>
+              )}
+              {editData.direccion !== empleado.direccion && (
+                <p><strong>Dirección:</strong> {empleado.direccion || '-'} → {editData.direccion}</p>
+              )}
+            </div>
+
+            <div className="confirm-actions">
+              <button 
+                className="confirm-btn cancel" 
+                onClick={() => setShowConfirmModal(false)}
+                disabled={isSaving}
+              >
+                Cancelar
+              </button>
+              <button 
+                className="confirm-btn confirm" 
+                onClick={guardarCambios}
+                disabled={isSaving}
+              >
+                {isSaving ? 'Guardando...' : 'Confirmar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE ÉXITO */}
+      {showSuccessModal && (
+        <div className="success-overlay">
+          <div className="success-modal">
+            <div className="success-icon">✅</div>
+            <h2>¡Éxito!</h2>
+            <p>{successMessage || "La acción se completó correctamente."}</p>
+            <div className="success-actions">
+              <button 
+                className="success-btn" 
+                onClick={() => setShowSuccessModal(false)}
+              >
+                Aceptar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* FOOTER */}
       <footer className="footer">

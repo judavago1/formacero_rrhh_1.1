@@ -14,6 +14,10 @@ function Reportes() {
   const [editEstado, setEditEstado] = useState("pendiente");
   const [loading, setLoading] = useState(false);
   const [searchParams] = useSearchParams();
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [deleteCandidate, setDeleteCandidate] = useState(null);
 
   // 🔐 OBTENER REPORTES DESDE BACKEND
   useEffect(() => {
@@ -25,6 +29,16 @@ function Reportes() {
       setActiveTab("reportes");
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (showSuccessModal) {
+      const timer = setTimeout(() => {
+        setShowSuccessModal(false);
+        setSuccessMessage("");
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccessModal]);
 
   async function fetchReportes() {
     setLoading(true);
@@ -95,26 +109,55 @@ function Reportes() {
 
   async function handleCreateReporte(e) {
     e.preventDefault();
-    console.log("Creando reporte con:", formData);
     try {
-      const payload = {
-        empleado_id: Number(formData.empleado_id),
-        descripcion: formData.descripcion,
-        fecha: formData.fecha
-      };
-      console.log("Payload:", payload);
+      let successText = "Reporte generado exitosamente.";
 
-      const res = await fetchWithAuth("/reportes", {
-        method: "POST",
-        body: JSON.stringify(payload)
-      });
-      console.log("Respuesta POST:", res.status, res.ok);
+      if (formData.empleado_id === "todos") {
+        if (!empleados.length) {
+          throw new Error("No hay empleados disponibles para enviar el reporte.");
+        }
 
-      if (res.ok) {
-        setFormData({ empleado_id: '', descripcion: '', fecha: '' });
-        await fetchReportes();
-        setActiveTab("reportes");
+        const createPromises = empleados.map(emp => {
+          const payload = {
+            empleado_id: Number(emp.id),
+            descripcion: formData.descripcion,
+            fecha: formData.fecha
+          };
+          return fetchWithAuth("/reportes", {
+            method: "POST",
+            body: JSON.stringify(payload)
+          });
+        });
+
+        const responses = await Promise.all(createPromises);
+        const allOk = responses.every(res => res.ok);
+        if (!allOk) {
+          throw new Error("No se pudo enviar el reporte a todos los empleados.");
+        }
+
+        successText = "Reporte generado exitosamente para todos los empleados.";
+      } else {
+        const payload = {
+          empleado_id: Number(formData.empleado_id),
+          descripcion: formData.descripcion,
+          fecha: formData.fecha
+        };
+
+        const res = await fetchWithAuth("/reportes", {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          throw new Error("Error creando reporte");
+        }
       }
+
+      setFormData({ empleado_id: '', descripcion: '', fecha: '' });
+      await fetchReportes();
+      setActiveTab("reportes");
+      setSuccessMessage(successText);
+      setShowSuccessModal(true);
     } catch (error) {
       console.error("Error creando reporte:", error);
     }
@@ -143,16 +186,34 @@ function Reportes() {
   }
 
   async function deleteReporte(id) {
-    if (!window.confirm("¿Eliminar este reporte?")) return;
+    const reporte = reportes.find(r => r.id === id);
+    if (reporte) {
+      setDeleteCandidate(reporte);
+      setShowConfirmModal(true);
+    }
+  }
+
+  const confirmDeleteReporte = async () => {
+    if (!deleteCandidate) return;
     try {
-      const res = await fetchWithAuth(`/reportes/${id}`, {
+      const res = await fetchWithAuth(`/reportes/${deleteCandidate.id}`, {
         method: "DELETE"
       });
-      if (res.ok) fetchReportes();
+      if (res.ok) {
+        fetchReportes();
+        setShowConfirmModal(false);
+        setSuccessMessage("El reporte ha sido eliminado correctamente.");
+        setShowSuccessModal(true);
+      }
     } catch (error) {
       console.error("Error eliminando reporte:", error);
     }
-  }
+  };
+
+  const cancelDeleteReporte = () => {
+    setShowConfirmModal(false);
+    setDeleteCandidate(null);
+  };
 
   return (
     <div className="reportes-principal">
@@ -207,6 +268,7 @@ function Reportes() {
               required
             >
               <option value="">Seleccionar Empleado</option>
+              <option value="todos">Enviar reporte a todos</option>
               {empleados.map(emp => (
                 <option key={emp.id} value={emp.id}>{emp.nombre}</option>
               ))}
@@ -310,6 +372,51 @@ function Reportes() {
             <div className="edit-actions">
               <button onClick={saveEdit} type="button">Guardar</button>
               <button type="button" className="btn-cancel" onClick={() => setEditingReport(null)}>Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE CONFIRMACIÓN */}
+      {showConfirmModal && deleteCandidate && (
+        <div className="confirm-overlay">
+          <div className="confirm-modal">
+            <div className="confirm-icon">🗑️</div>
+            <h2>Confirmar Eliminación</h2>
+            <p>¿Estás seguro de que deseas eliminar este reporte de <strong>{deleteCandidate.empleado}</strong>?</p>
+            
+            <div className="confirm-actions">
+              <button 
+                className="confirm-btn cancel" 
+                onClick={cancelDeleteReporte}
+              >
+                Cancelar
+              </button>
+              <button 
+                className="confirm-btn confirm" 
+                onClick={confirmDeleteReporte}
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE ÉXITO */}
+      {showSuccessModal && (
+        <div className="success-overlay">
+          <div className="success-modal">
+            <div className="success-icon">✅</div>
+            <h2>¡Operación Exitosa!</h2>
+            <p>{successMessage || "La acción se completó correctamente."}</p>
+            <div className="success-actions">
+              <button 
+                className="success-btn" 
+                onClick={() => setShowSuccessModal(false)}
+              >
+                Aceptar
+              </button>
             </div>
           </div>
         </div>
