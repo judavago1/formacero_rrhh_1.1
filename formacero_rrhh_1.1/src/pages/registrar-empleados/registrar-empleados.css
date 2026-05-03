@@ -105,6 +105,33 @@ h3 {
 
 }
 
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 768px) {
+    .seccion-registrar-empleados {
+        padding: 40px 10px;
+    }
+
+    .container {
+        padding: 20px;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    h1 {
+        font-size: 1.5rem;
+    }
+
+    h2 {
+        font-size: 1.2rem;
+    }
+}
+
 
 /* =========================
    FORM GROUP

@@ -40,3 +40,10 @@
 .read-the-docs {
   color: #888;
 }
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  #root {
+    padding: 0;
+  }
+}

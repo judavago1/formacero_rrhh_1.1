@@ -53,7 +53,13 @@ function RegistrarEmpleados() {
   function handleFoto(e){
     const file = e.target.files[0];
 
-    if(file){
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        alert("La foto no debe superar 2MB.");
+        e.target.value = null;
+        return;
+      }
+
       setForm({...form, foto:file});
 
       const reader = new FileReader();
@@ -74,27 +80,34 @@ function RegistrarEmpleados() {
     e.preventDefault();
 
     try {
+      if (form.foto && form.foto.size > 2 * 1024 * 1024) {
+        throw new Error("La foto no debe superar 2MB.");
+      }
 
-      const nuevoEmpleado = {
-        nombre: form.nombre,
-        cedula: form.cedula,
-        correo: form.correo,
-        cargo: form.cargo,
-        telefono: form.telefono,
-        direccion: form.direccion,
-        salario: form.salario,
-        fechaIngreso: form.fechaIngreso,
-        fechaNacimiento: form.fechaNacimiento,
-        departamento: form.departamento,
-        contactoEmergencia: form.contactoEmergencia
-      };
+      const formData = new FormData();
+      formData.append("nombre", form.nombre);
+      formData.append("cedula", form.cedula);
+      formData.append("correo", form.correo);
+      formData.append("cargo", form.cargo);
+      formData.append("telefono", form.telefono);
+      formData.append("direccion", form.direccion);
+      formData.append("salario", form.salario);
+      formData.append("fechaIngreso", form.fechaIngreso);
+      formData.append("fechaNacimiento", form.fechaNacimiento);
+      formData.append("departamento", form.departamento);
+      formData.append("contactoEmergencia", JSON.stringify(form.contactoEmergencia));
 
-      // 🔐 TOKEN AGREGADO
-      const token = localStorage.getItem("token");
+      if (form.foto) {
+        formData.append("foto", form.foto);
+      }
+
+      documentos.forEach((doc) => {
+        formData.append("documentos", doc);
+      });
 
       const res = await fetchWithAuth("/empleados", {
         method: "POST",
-        body: JSON.stringify(nuevoEmpleado)
+        body: formData
       });
 
       const data = await res.json();

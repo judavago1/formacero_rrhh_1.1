@@ -3,6 +3,9 @@ import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom"
 import { fetchWithAuth } from "../../utils/api";
 import "../../layout.css";
 import "./empleado-detalle.css";
+import "./documentos.css";
+
+const DEFAULT_PROFILE_IMAGE = "/default-profile.svg";
 
 function EmpleadoDetalle() {
 
@@ -22,6 +25,11 @@ function EmpleadoDetalle() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [profilePhoto, setProfilePhoto] = useState(null);
+  const [documentos, setDocumentos] = useState([]);
+  const [nuevoDocumento, setNuevoDocumento] = useState(null);
+  const [cargandoDocumento, setCargandoDocumento] = useState(false);
+  const [showDocumentoForm, setShowDocumentoForm] = useState(false);
 
   const currentUser = JSON.parse(localStorage.getItem("user")) || {};
   const currentEmployeeId = currentUser?.empleado_id ?? currentUser?.id;
@@ -76,6 +84,9 @@ function EmpleadoDetalle() {
 
         const data = await res.json();
         setEmpleado(data);
+        if (data.documentos) {
+          setDocumentos(data.documentos);
+        }
         setEditData({
           nombre: data.nombre || '',
           telefono: data.telefono || '',
@@ -127,32 +138,107 @@ function EmpleadoDetalle() {
     setEditData({ ...editData, [field]: value });
   };
 
+  const handleProfilePhoto = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      alert('La foto no debe superar los 2MB.');
+      e.target.value = null;
+      return;
+    }
+    setProfilePhoto(file);
+  };
+
   const confirmarGuardar = () => {
     setShowConfirmModal(true);
+  };
+
+  const handleDocumentoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setNuevoDocumento(file);
+    }
+  };
+
+  const cargarDocumento = async () => {
+    if (!nuevoDocumento) {
+      alert('Selecciona un archivo primero');
+      return;
+    }
+
+    setCargandoDocumento(true);
+    try {
+      const formData = new FormData();
+      formData.append('documento', nuevoDocumento);
+
+      const res = await fetchWithAuth(`/empleados/${id}/documentos`, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setDocumentos([...documentos, data]);
+        setNuevoDocumento(null);
+        setShowDocumentoForm(false);
+        setSuccessMessage('Documento cargado exitosamente.');
+        setShowSuccessModal(true);
+      } else {
+        const error = await res.json();
+        alert(`Error al cargar documento: ${error.message}`);
+      }
+    } catch (error) {
+      console.error('Error cargando documento:', error);
+      alert('Error al cargar el documento');
+    } finally {
+      setCargandoDocumento(false);
+    }
   };
 
   const guardarCambios = async () => {
     setIsSaving(true);
     try {
-      const res = await fetchWithAuth(`/empleados/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          nombre: editData.nombre,
-          telefono: editData.telefono,
-          direccion: editData.direccion
-        })
-      });
+      let res;
+
+      if (profilePhoto) {
+        const formData = new FormData();
+        formData.append('nombre', editData.nombre);
+        formData.append('telefono', editData.telefono);
+        formData.append('direccion', editData.direccion);
+        formData.append('foto', profilePhoto);
+
+        res = await fetchWithAuth(`/empleados/${id}`, {
+          method: 'PUT',
+          body: formData
+        });
+      } else {
+        res = await fetchWithAuth(`/empleados/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            nombre: editData.nombre,
+            telefono: editData.telefono,
+            direccion: editData.direccion
+          })
+        });
+      }
 
       if (res.ok) {
-        setEmpleado({
-          ...empleado,
-          nombre: editData.nombre,
-          telefono: editData.telefono,
-          direccion: editData.direccion
-        });
+        const empleadoRes = await fetchWithAuth(`/empleados/${id}`);
+        if (empleadoRes.ok) {
+          const empleadoActualizado = await empleadoRes.json();
+          setEmpleado(empleadoActualizado);
+        } else {
+          setEmpleado({
+            ...empleado,
+            nombre: editData.nombre,
+            telefono: editData.telefono,
+            direccion: editData.direccion,
+          });
+        }
+
         setIsEditing(false);
         setShowConfirmModal(false);
-        setSuccessMessage("Información actualizada correctamente.");
+        setSuccessMessage('Información actualizada correctamente.');
         setShowSuccessModal(true);
       } else {
         alert('Error al actualizar la información');
@@ -162,6 +248,7 @@ function EmpleadoDetalle() {
       alert('Error al guardar los cambios');
     } finally {
       setIsSaving(false);
+      setProfilePhoto(null);
     }
   };
 
@@ -244,7 +331,11 @@ function EmpleadoDetalle() {
 
             <div className="perfil-header">
               <div className="avatar">
-                {empleado.nombre.charAt(0)}
+                <img
+                  src={empleado.foto_url || DEFAULT_PROFILE_IMAGE}
+                  alt={empleado.nombre || "Perfil"}
+                  className="perfil-avatar-img"
+                />
               </div>
 
               <div className="perfil-info-header">
@@ -259,6 +350,17 @@ function EmpleadoDetalle() {
                   <h2>{empleado.nombre}</h2>
                 )}
                 <p>{empleado.cargo}</p>
+                {isEditing && (
+                  <div className="photo-upload-field">
+                    <label htmlFor="profilePhoto">Actualizar foto de perfil</label>
+                    <input
+                      id="profilePhoto"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleProfilePhoto}
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
@@ -375,6 +477,56 @@ function EmpleadoDetalle() {
                   )}
                 </div>
               )}
+            </div>
+
+            <div className="documentos-card">
+              <div className="documentos-header">
+                <h3>📄 Documentos</h3>
+                {canViewAssignedReports && (
+                  <button
+                    type="button"
+                    className="btn-agregar-documento"
+                    onClick={() => setShowDocumentoForm(!showDocumentoForm)}
+                  >
+                    {showDocumentoForm ? "Cancelar" : "+ Agregar Documento"}
+                  </button>
+                )}
+              </div>
+
+              {showDocumentoForm && canViewAssignedReports && (
+                <div className="documento-form">
+                  <input
+                    type="file"
+                    onChange={handleDocumentoChange}
+                    accept=".pdf,.doc,.docx,.xlsx,.jpg,.jpeg,.png"
+                  />
+                  <button
+                    type="button"
+                    className="btn-cargar-documento"
+                    onClick={cargarDocumento}
+                    disabled={!nuevoDocumento || cargandoDocumento}
+                  >
+                    {cargandoDocumento ? "Cargando..." : "Cargar Documento"}
+                  </button>
+                </div>
+              )}
+
+              <div className="documentos-list">
+                {documentos && documentos.length > 0 ? (
+                  documentos.map((doc) => (
+                    <div key={doc.id} className="documento-item">
+                      <div className="documento-info">
+                        <a href={doc.url} target="_blank" rel="noopener noreferrer" className="documento-link">
+                          📎 {doc.nombre_original}
+                        </a>
+                        <p className="documento-fecha">{new Date(doc.fecha_subida).toLocaleDateString("es-CO")}</p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="sin-documentos">No hay documentos cargados.</p>
+                )}
+              </div>
             </div>
 
           </div>
