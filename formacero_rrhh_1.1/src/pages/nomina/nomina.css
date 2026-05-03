@@ -221,3 +221,20 @@ hr{
     }
 
 }
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .seccion-formulario-nomina {
+    padding: 40px 10px;
+  }
+
+  .contenedor-nomina {
+    padding: 25px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .contenedor-nomina h2 {
+    font-size: 1.5rem;
+  }
+}

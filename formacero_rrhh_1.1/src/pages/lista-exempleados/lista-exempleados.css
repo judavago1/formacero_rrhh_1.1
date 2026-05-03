@@ -101,6 +101,28 @@ background:#c0392b;
 
 }
 
+/* RESPONSIVE */
+
+@media (max-width:900px){
+
+.table-section{
+padding:20px;
+overflow-x: auto;
+}
+
+table{
+font-size:0.8rem;
+min-width: 600px;
+}
+
+}
+
+@media (max-width: 600px) {
+  .table-section {
+    padding: 10px;
+  }
+}
+
 
 /* MOTIVO */
 

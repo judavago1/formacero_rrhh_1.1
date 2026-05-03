@@ -18,7 +18,22 @@ CREATE TABLE empleados (
   salario DECIMAL(10,2),
   fecha_ingreso DATE,
   correo VARCHAR(100),
-  telefono VARCHAR(20)
+  telefono VARCHAR(20),
+  direccion TEXT,
+  fecha_nacimiento DATE,
+  documento VARCHAR(50),
+  departamento_id INT,
+  foto_url VARCHAR(255)
+);
+
+CREATE TABLE documentos_empleado (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  empleado_id INT,
+  nombre_original VARCHAR(255),
+  tipo VARCHAR(100),
+  url TEXT,
+  fecha_subida TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (empleado_id) REFERENCES empleados(id)
 );
 
 -- EX EMPLEADOS

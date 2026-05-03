@@ -437,10 +437,41 @@ align-items:center;
 width:90%;
 }
 
-table{
-font-size:0.8rem;
+.table-section {
+  padding: 20px;
+  overflow-x: auto;
 }
 
+table{
+font-size:0.8rem;
+min-width: 600px;
+}
+
+}
+
+@media (max-width: 600px) {
+  .filter-section {
+    padding: 20px 10px;
+  }
+
+  .filter-section input {
+    width: 100%;
+  }
+
+  .table-section {
+    padding: 10px;
+  }
+
+  .actions {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .edit-btn, .delete-btn {
+    min-width: 80px;
+    font-size: 11px;
+    padding: 4px 8px;
+  }
 }
 /* MODAL DE EDICIÓN */
 

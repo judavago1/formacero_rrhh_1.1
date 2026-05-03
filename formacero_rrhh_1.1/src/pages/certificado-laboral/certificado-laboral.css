@@ -241,6 +241,33 @@ button:hover{
 
 }
 
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .seccion-certificado {
+    padding: 40px 10px;
+  }
+
+  .container {
+    padding: 20px;
+  }
+
+  .generator-box {
+    padding: 15px;
+    flex-direction: column;
+  }
+
+  .certificate {
+    padding: 30px;
+  }
+
+  .certificate h2 {
+    font-size: 1.5rem;
+  }
+
+  .certificate p {
+    font-size: 14px;
+  }
+}
 
 /* =========================
    IMPRESIÓN

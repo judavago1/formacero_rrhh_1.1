@@ -1,6 +1,9 @@
 import { supabase } from "../config/supabase.js";
 import bcrypt from "bcrypt";
 
+const MAX_PHOTO_SIZE = 2 * 1024 * 1024;
+const SUPABASE_BUCKET = "empleados";
+
 const findOrCreateDepartamentoId = async (nombre) => {
   if (!nombre?.trim()) return null;
 
@@ -28,12 +31,65 @@ const findOrCreateDepartamentoId = async (nombre) => {
   return insertData?.id || null;
 };
 
+const safeParseJSON = (value) => {
+  if (!value) return null;
+  if (typeof value === "string") {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return null;
+    }
+  }
+  return value;
+};
+
+const uploadFileToSupabase = async (empleadoId, file, folder) => {
+  if (!file) return null;
+
+  const ext = file.originalname.split(".").pop() || "bin";
+  const filePath = `${folder}/${empleadoId}/${Date.now()}-${Math.round(Math.random() * 1e9)}.${ext}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from(SUPABASE_BUCKET)
+    .upload(filePath, file.buffer, {
+      contentType: file.mimetype,
+      upsert: true,
+    });
+
+  if (uploadError) throw uploadError;
+
+  const { data: publicUrlData, error: publicUrlError } = await supabase.storage
+    .from(SUPABASE_BUCKET)
+    .getPublicUrl(filePath);
+
+  if (publicUrlError) throw publicUrlError;
+  return publicUrlData?.publicUrl || null;
+};
+
+const saveDocumentosMetadata = async (empleadoId, docs) => {
+  if (!docs?.length) return;
+
+  for (const file of docs) {
+    const url = await uploadFileToSupabase(empleadoId, file, "documentos");
+    const { error } = await supabase.from("documentos_empleado").insert([{
+      empleado_id: empleadoId,
+      nombre_original: file.originalname,
+      tipo: file.mimetype,
+      url,
+    }]);
+
+    if (error && error.code !== "PGRST205") {
+      throw error;
+    }
+  }
+};
+
 // 🔹 OBTENER EMPLEADOS
 export const getEmpleados = async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("empleados")
-      .select("id, nombre, correo, telefono, salario, fecha_ingreso, fecha_nacimiento, documento, cargo, departamento_id, departamentos(nombre)");
+      .select("id, nombre, correo, telefono, salario, fecha_ingreso, fecha_nacimiento, documento, cargo, departamento_id, foto_url, departamentos(nombre)");
 
     if (error) throw error;
 
@@ -74,12 +130,188 @@ export const createEmpleado = async (req, res) => {
       fechaNacimiento,
       telefono,
       direccion,
-      contactoEmergencia
+      contactoEmergencia: contactoRaw
     } = req.body;
+
+    const contactoEmergencia = safeParseJSON(contactoRaw) || {};
+    const fotoFile = req.files?.foto?.[0] || null;
+    const documentosFiles = req.files?.documentos || [];
 
     if (!nombre || !cedula || !correo) {
       return res.status(400).json({ message: "Faltan campos obligatorios" });
     }
+
+    if (fotoFile && fotoFile.size > MAX_PHOTO_SIZE) {
+      return res.status(400).json({ message: "La foto no debe superar los 2MB." });
+    }
+
+    const correoNormalizado = correo.trim().toLowerCase();
+    const cedulaNormalizada = String(cedula).trim();
+
+    const { data: existingEmpleado, error: empleadoExistsError } = await supabase
+      .from("empleados")
+      .select("id")
+      .eq("correo", correoNormalizado)
+      .limit(1)
+      .single();
+
+    if (empleadoExistsError && empleadoExistsError.code !== "PGRST116") {
+      throw empleadoExistsError;
+    }
+
+    if (existingEmpleado) {
+      return res.status(409).json({
+        message: "El correo ya está registrado para otro empleado. Usa un correo diferente."
+      });
+    }
+
+    const { data: existingUsuario, error: usuarioExistsError } = await supabase
+      .from("usuarios")
+      .select("id")
+      .eq("correo", correoNormalizado)
+      .limit(1)
+      .single();
+
+    if (usuarioExistsError && usuarioExistsError.code !== "PGRST116") {
+      throw usuarioExistsError;
+    }
+
+    if (existingUsuario) {
+      return res.status(409).json({
+        message: "El correo ya está registrado para otro usuario. Usa un correo diferente."
+      });
+    }
+
+    const departamentoId = departamento
+      ? await findOrCreateDepartamentoId(departamento)
+      : null;
+
+    const isUsingServiceRole = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+    if (!isUsingServiceRole && contactoEmergencia && contactoEmergencia.nombre) {
+      return res.status(500).json({
+        message: "No hay SUPABASE_SERVICE_ROLE_KEY configurada. Sin ella, la tabla contactos_emergencia bloquea la inserción por RLS."
+      });
+    }
+
+    const empleadoPayload = {
+      nombre,
+      documento: cedulaNormalizada,
+      correo: correoNormalizado,
+      cargo: cargo || null,
+      salario: salario || null,
+      fecha_ingreso: fechaIngreso || null,
+      fecha_nacimiento: fechaNacimiento || null,
+      telefono: telefono || null,
+      direccion: direccion || null,
+      departamento_id: departamentoId
+    };
+
+    const { data: empleadoData, error: empError } = await supabase
+      .from("empleados")
+      .insert([empleadoPayload])
+      .select();
+
+    if (empError) {
+      if (empError.code === "23505") {
+        return res.status(409).json({
+          message: "El correo ya existe en la base de datos. Usa un correo diferente."
+        });
+      }
+      throw empError;
+    }
+
+    const empleadoId = empleadoData[0].id;
+
+    let fotoUrl = null;
+    if (fotoFile) {
+      fotoUrl = await uploadFileToSupabase(empleadoId, fotoFile, "perfil");
+      const { error: updateFotoError } = await supabase
+        .from("empleados")
+        .update({ foto_url: fotoUrl })
+        .eq("id", empleadoId);
+
+      if (updateFotoError) {
+        throw updateFotoError;
+      }
+    }
+
+    if (documentosFiles.length) {
+      try {
+        await saveDocumentosMetadata(empleadoId, documentosFiles);
+      } catch (docError) {
+        console.warn("No se pudieron guardar todos los documentos:", docError);
+      }
+    }
+
+    if (contactoEmergencia && contactoEmergencia.nombre) {
+      const contactoPayload = {
+        empleado_id: empleadoId,
+        nombre: contactoEmergencia.nombre,
+        relacion: contactoEmergencia.relacion,
+        telefono_principal: contactoEmergencia.telefonoPrincipal,
+        telefono_alternativo: contactoEmergencia.telefonoAlternativo || null,
+        direccion: contactoEmergencia.direccion || null,
+        ciudad: contactoEmergencia.ciudad || null,
+        autorizacion: false
+      };
+
+      const { error: contactoError } = await supabase
+        .from("contactos_emergencia")
+        .insert([contactoPayload]);
+
+      if (contactoError) {
+        await supabase.from("empleados").delete().eq("id", empleadoId);
+        await supabase.from("usuarios").delete().eq("empleado_id", empleadoId);
+
+        if (contactoError.code === "42501") {
+          return res.status(500).json({
+            message: "Error RLS: revise la clave SUPABASE_SERVICE_ROLE_KEY o las políticas de seguridad de la tabla contactos_emergencia."
+          });
+        }
+
+        throw contactoError;
+      }
+    }
+
+    const defaultPassword = cedulaNormalizada;
+    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+
+    const { error: userError } = await supabase
+      .from("usuarios")
+      .insert([{
+        nombre,
+        correo: correoNormalizado,
+        password: hashedPassword,
+        rol: "empleado",
+        empleado_id: empleadoId
+      }]);
+
+    if (userError) {
+      await supabase.from("empleados").delete().eq("id", empleadoId);
+
+      if (userError.code === "23505") {
+        return res.status(409).json({
+          message: "El correo ya existe para otro usuario. Usa un correo diferente."
+        });
+      }
+
+      throw userError;
+    }
+
+    res.json({
+      message: "Empleado y usuario creados",
+      credenciales: {
+        correo: correoNormalizado,
+        password: defaultPassword
+      },
+      foto_url: fotoUrl
+    });
+  } catch (err) {
+    console.error("ERROR CREATE:", err);
+    res.status(500).json(err);
+  }
+};
 
     const correoNormalizado = correo.trim().toLowerCase();
     const cedulaNormalizada = String(cedula).trim();
@@ -237,6 +469,11 @@ export const updateEmpleado = async (req, res) => {
   try {
     const { id } = req.params;
     const { nombre, cargo, departamento, telefono, direccion } = req.body;
+    const fotoFile = req.file || null;
+
+    if (fotoFile && fotoFile.size > MAX_PHOTO_SIZE) {
+      return res.status(400).json({ message: "La foto no debe superar los 2MB." });
+    }
 
     const departamentoId = departamento
       ? await findOrCreateDepartamentoId(departamento)
@@ -250,6 +487,11 @@ export const updateEmpleado = async (req, res) => {
     if (direccion) updateData.direccion = direccion;
     if (departamentoId !== null) {
       updateData.departamento_id = departamentoId;
+    }
+
+    if (fotoFile) {
+      const fotoUrl = await uploadFileToSupabase(id, fotoFile, "perfil");
+      updateData.foto_url = fotoUrl;
     }
 
     const { error } = await supabase
@@ -455,6 +697,15 @@ export const getEmpleadoById = async (req, res) => {
 
     if (!data) {
       return res.status(404).json({ message: "Empleado no encontrado" });
+    }
+
+    const { data: documentos, error: documentosError } = await supabase
+      .from("documentos_empleado")
+      .select("id, nombre_original, tipo, url, fecha_subida")
+      .eq("empleado_id", id);
+
+    if (!documentosError) {
+      data.documentos = documentos;
     }
 
     res.json(data);

@@ -152,3 +152,15 @@ button:hover{
     text-align:center;
 
 }
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .seccion-vacaciones {
+    padding: 40px 10px;
+  }
+
+  .contenedor-vacaciones {
+    padding: 20px;
+    max-width: 100%;
+  }
+}

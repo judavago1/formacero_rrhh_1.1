@@ -199,6 +199,39 @@ h2 {
     background: #4b5563;
 }
 
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .contenedor-reportes {
+    margin-top: 20px;
+    margin-bottom: 20px;
+  }
+
+  .grid-reportes {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .tarjeta {
+    padding: 15px;
+  }
+
+  .acciones-reporte {
+    justify-content: center;
+  }
+
+  .edit-content {
+    padding: 20px;
+  }
+
+  .edit-actions {
+    flex-direction: column;
+  }
+
+  .edit-actions button {
+    width: 100%;
+  }
+}
+
 /* =========================
    FORMULARIO CREAR REPORTE
 ========================= */
