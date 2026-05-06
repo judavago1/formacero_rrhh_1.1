@@ -514,12 +514,16 @@ export const getCumpleaneros = async (req, res) => {
 // 🔍 BUSCAR EMPLEADO POR NOMBRE
 export const searchEmpleado = async (req, res) => {
   try {
-    const { q } = req.query;
+    const q = (req.query.q || "").trim();
+
+    if (q.length < 2) {
+      return res.json([]);
+    }
 
     const { data, error } = await supabase
       .from("empleados")
-      .select("id, nombre, documento, correo, telefono, departamento_id, departamentos(nombre)")
-      .ilike("nombre", `%${q}%`)
+      .select("id, nombre, documento, correo, telefono, cargo, foto_url, departamento_id, departamentos(nombre)")
+      .or(`nombre.ilike.%${q}%,correo.ilike.%${q}%,documento.ilike.%${q}%`)
       .limit(5);
 
     if (error) throw error;

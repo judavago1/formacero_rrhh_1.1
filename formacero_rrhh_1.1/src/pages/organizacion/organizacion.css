@@ -55,6 +55,8 @@ body {
     box-shadow: var(--sombra);
     text-align: center;
     transition: 0.3s ease;
+    text-decoration: none;
+    color: inherit;
 }
 
 .card:hover {

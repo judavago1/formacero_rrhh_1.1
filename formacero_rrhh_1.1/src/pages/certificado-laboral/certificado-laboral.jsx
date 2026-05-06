@@ -11,10 +11,14 @@ function CertificadoLaboral() {
   const [text, setText] = useState("");
   const [visible, setVisible] = useState(false);
   const [employees, setEmployees] = useState([]);
+  const [search, setSearch] = useState("");
+  const [results, setResults] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const filteredEmployees = employees;
   const token = localStorage.getItem("token");
 
   // 🔹 Obtener usuario logueado
@@ -41,6 +45,37 @@ function CertificadoLaboral() {
       setSelected(user.id);
     }
   }, [user]);
+
+  const handleSearchChange = async (e) => {
+    const value = e.target.value;
+    setSearch(value);
+
+    const query = value.trim();
+    if (query.length < 2) {
+      setResults([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    try {
+      const encoded = encodeURIComponent(query);
+      const res = await fetchWithAuth(`/empleados/search?q=${encoded}`);
+      const data = await res.json();
+
+      if (!res.ok || !Array.isArray(data)) {
+        setResults([]);
+        setShowDropdown(false);
+        return;
+      }
+
+      setResults(data);
+      setShowDropdown(true);
+    } catch (error) {
+      console.error("Error buscando empleados:", error);
+      setResults([]);
+      setShowDropdown(false);
+    }
+  };
 
   // 🔹 Cargar empleados
   useEffect(() => {
@@ -148,7 +183,33 @@ La presente certificación se expide a solicitud del interesado(a) el día ${tod
       <header className="header">
         <div className="logo">Formacero</div>
         <div className="search-bar">
-          <input placeholder="Buscar empleados..." />
+          <input
+            placeholder="Buscar empleados por nombre, correo o cédula..."
+            value={search}
+            onChange={handleSearchChange}
+            onFocus={() => setShowDropdown(true)}
+            onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+          />
+          {showDropdown && results.length > 0 && (
+            <div className="search-dropdown">
+              {results.map(emp => (
+                <div
+                  key={emp.id}
+                  className="search-item"
+                  onMouseDown={() => navigate(`/empleado/${emp.id}`)}
+                >
+                  <img
+                    src={emp.foto_url || `https://i.pravatar.cc/40?u=${emp.id}`}
+                    alt={emp.nombre}
+                  />
+                  <div className="search-item-info">
+                    <strong>{emp.nombre}</strong>
+                    <p>{emp.correo || emp.documento || emp.cargo || "Empleado"}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         <Link to="/dashboard" className="back-btn">← Volver al Panel</Link>
       </header>
@@ -176,8 +237,8 @@ La presente certificación se expide a solicitud del interesado(a) el día ${tod
             >
               <option value="">Seleccionar empleado</option>
 
-              {employees.length > 0 ? (
-                employees.map(emp => (
+              {filteredEmployees.length > 0 ? (
+                filteredEmployees.map(emp => (
                   <option key={emp.id} value={emp.id}>
                     {emp.nombre}
                   </option>

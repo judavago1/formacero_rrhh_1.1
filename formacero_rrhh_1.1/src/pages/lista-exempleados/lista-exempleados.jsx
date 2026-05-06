@@ -9,8 +9,16 @@ function ListaExempleados() {
 
   const [openRow, setOpenRow] = useState(null);
   const [exempleados, setExempleados] = useState([]);
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const filteredExempleados = exempleados.filter(emp =>
+    emp.nombre.toLowerCase().includes(search.toLowerCase()) ||
+    emp.cargo.toLowerCase().includes(search.toLowerCase()) ||
+    emp.departamento.toLowerCase().includes(search.toLowerCase()) ||
+    (emp.motivo || "").toLowerCase().includes(search.toLowerCase())
+  );
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [deleteCandidate, setDeleteCandidate] = useState(null);
@@ -129,6 +137,8 @@ function ListaExempleados() {
           <input
             type="text"
             placeholder="Buscar empleados..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
@@ -159,14 +169,14 @@ function ListaExempleados() {
           </thead>
 
           <tbody>
-            {exempleados.length === 0 ? (
+            {filteredExempleados.length === 0 ? (
               <tr>
                 <td colSpan="7" style={{ textAlign: "center" }}>
                   No hay exempleados registrados
                 </td>
               </tr>
             ) : (
-              exempleados.map((emp, index) => (
+              filteredExempleados.map((emp, index) => (
                 <React.Fragment key={emp.id}>
                   <tr className="ex-row">
                     <td>{emp.nombre}</td>
