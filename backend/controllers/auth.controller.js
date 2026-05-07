@@ -76,8 +76,7 @@ export const login = async (req, res) => {
       const token = jwt.sign(
         {
           id: user.id,
-          rol: user.rol,
-          empleado_id: user.empleado_id || user.id
+          rol: user.rol
         },
         process.env.JWT_SECRET,
         { expiresIn: "8h" }
@@ -108,7 +107,7 @@ export const login = async (req, res) => {
   }
 
 };
-
+// 🔑 RECUPERAR CONTRASEÑA
 export const forgotPassword = async (req, res) => {
   const correo = (req.body?.correo || "").trim().toLowerCase();
   if (!correo) {

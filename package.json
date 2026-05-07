@@ -2,7 +2,8 @@
   "type": "module",
   "dependencies": {
     "concurrently": "^9.2.1",
-    "nodemailer": "^8.0.7"
+    "nodemailer": "^8.0.7",
+    "pdf-parse": "^2.4.5"
   },
   "scripts": {
     "dev": "node dev.js",
