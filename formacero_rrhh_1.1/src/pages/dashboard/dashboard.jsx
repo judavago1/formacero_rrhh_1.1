@@ -50,13 +50,15 @@ function Dashboard() {
     const value = e.target.value;
     setSearch(value);
 
-    if (value.length < 2) {
+    const trimmedValue = value.trim();
+    if (trimmedValue.length < 2) {
       setResults([]);
       return;
     }
 
     try {
-      const res = await fetch(`${API}/empleados/search?q=${value}`, {
+      const query = encodeURIComponent(trimmedValue);
+      const res = await fetch(`${API}/empleados/search?q=${query}`, {
         headers: {
           "Authorization": `Bearer ${token}`
         }
@@ -226,7 +228,7 @@ function Dashboard() {
         <div className="search-bar" style={{ position: "relative" }}>
           <input
             type="text"
-            placeholder="Buscar empleados..."
+            placeholder="Buscar empleados por nombre, correo o cédula..."
             value={search}
             onChange={handleSearchChange}
             onFocus={() => setShowDropdown(true)}
@@ -241,8 +243,14 @@ function Dashboard() {
                   className="search-item"
                   onMouseDown={() => navigate(`/empleado/${emp.id}`)}
                 >
-                  <strong>{emp.nombre}</strong>
-                  <p>{emp.cargo || emp.correo || "Empleado"}</p>
+                  <img
+                    src={emp.foto_url || `https://i.pravatar.cc/40?u=${emp.id}`}
+                    alt={emp.nombre}
+                  />
+                  <div className="search-item-info">
+                    <strong>{emp.nombre}</strong>
+                    <p>{emp.correo || emp.documento || emp.cargo || "Empleado"}</p>
+                  </div>
                 </div>
               ))}
             </div>

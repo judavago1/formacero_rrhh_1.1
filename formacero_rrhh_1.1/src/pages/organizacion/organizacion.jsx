@@ -8,6 +8,13 @@ import { fetchWithAuth } from "../../utils/api";
 function Organizacion() {
 
   const [empleados, setEmpleados] = useState([]);
+  const [search, setSearch] = useState("");
+
+  const filteredEmployees = empleados.filter(emp =>
+    emp.nombre.toLowerCase().includes(search.toLowerCase()) ||
+    (emp.cargo || "").toLowerCase().includes(search.toLowerCase()) ||
+    (emp.departamento || emp.departamentos?.nombre || "").toLowerCase().includes(search.toLowerCase())
+  );
 
   // 🔥 TRAER DATOS CON TOKEN
   useEffect(() => {
@@ -39,6 +46,8 @@ function Organizacion() {
           <input
             type="text"
             placeholder="Buscar empleados, cargos o documentos..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
@@ -56,23 +65,31 @@ function Organizacion() {
       {/* ORGANIGRAMA DINÁMICO */}
       <section className="organization">
 
-        {empleados.map(emp => (
-          <div key={emp.id} className={`card ${getClase(emp.cargo)}`}>
+        {filteredEmployees.length === 0 ? (
+          <p style={{ width: "100%", textAlign: "center", color: "#666" }}>
+            No se encontraron empleados con ese criterio.
+          </p>
+        ) : (
+          filteredEmployees.map(emp => (
+            <Link
+              key={emp.id}
+              to={`/empleado/${emp.id}`}
+              className={`card ${getClase(emp.cargo)}`}
+            >
+              <img
+                src={emp.foto_url || `https://i.pravatar.cc/150?u=${emp.id}`}
+                alt={emp.nombre}
+              />
 
-            <img
-              src={`https://i.pravatar.cc/150?u=${emp.id}`}
-              alt=""
-            />
+              <h3>{emp.nombre}</h3>
+              <p>{emp.cargo || "Sin cargo"}</p>
 
-            <h3>{emp.nombre}</h3>
-            <p>{emp.cargo || "Sin cargo"}</p>
-
-            <span>
-              {emp.departamento || emp.departamentos?.nombre || "Sin departamento"}
-            </span>
-
-          </div>
-        ))}
+              <span>
+                {emp.departamento || emp.departamentos?.nombre || "Sin departamento"}
+              </span>
+            </Link>
+          ))
+        )}
 
       </section>
 

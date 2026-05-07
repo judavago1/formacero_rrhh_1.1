@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { fetchWithAuth } from "../../utils/api";
 import "./reportes.css";
 
 function Reportes() {
 
+  const navigate = useNavigate();
   const [reportes, setReportes] = useState([]);
   const [empleados, setEmpleados] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [results, setResults] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
   const [formData, setFormData] = useState({ empleado_id: '', descripcion: '', fecha: '' });
   const [activeTab, setActiveTab] = useState("formulario");
+
   const [editingReport, setEditingReport] = useState(null);
   const [editDecision, setEditDecision] = useState("");
   const [editEstado, setEditEstado] = useState("pendiente");
@@ -85,6 +90,37 @@ function Reportes() {
       setEmpleados([]);
     }
   }
+
+  const handleSearchChange = async (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+
+    const query = value.trim();
+    if (query.length < 2) {
+      setResults([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    try {
+      const encoded = encodeURIComponent(query);
+      const res = await fetchWithAuth(`/empleados/search?q=${encoded}`);
+      const data = await res.json();
+
+      if (!res.ok || !Array.isArray(data)) {
+        setResults([]);
+        setShowDropdown(false);
+        return;
+      }
+
+      setResults(data);
+      setShowDropdown(true);
+    } catch (error) {
+      console.error("Error buscando empleados:", error);
+      setResults([]);
+      setShowDropdown(false);
+    }
+  };
 
   async function cambiarEstado(id) {
     try {
@@ -224,8 +260,32 @@ function Reportes() {
         <div className="search-bar">
           <input
             type="text"
-            placeholder="Buscar empleados, cargos o documentos..."
+            placeholder="Buscar empleados por nombre, correo o cédula..."
+            value={searchQuery}
+            onChange={handleSearchChange}
+            onFocus={() => setShowDropdown(true)}
+            onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
           />
+          {showDropdown && results.length > 0 && (
+            <div className="search-dropdown">
+              {results.map(emp => (
+                <div
+                  key={emp.id}
+                  className="search-item"
+                  onMouseDown={() => navigate(`/empleado/${emp.id}`)}
+                >
+                  <img
+                    src={emp.foto_url || `https://i.pravatar.cc/40?u=${emp.id}`}
+                    alt={emp.nombre}
+                  />
+                  <div className="search-item-info">
+                    <strong>{emp.nombre}</strong>
+                    <p>{emp.correo || emp.documento || "Empleado"}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         <Link to="/dashboard" className="back-btn">← Volver al Panel</Link>
       </header>

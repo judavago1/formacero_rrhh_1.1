@@ -6,8 +6,16 @@ import "./vacaciones.css";
 function Vacaciones() {
 
   const [empleados,setEmpleados] = useState([]);
+  const [search,setSearch] = useState("");
   const [empleadoSeleccionado,setEmpleadoSeleccionado] = useState(null);
   const [diasSolicitados,setDiasSolicitados] = useState("");
+
+  const empleadosFiltrados = empleados.filter(emp =>
+    emp.nombre.toLowerCase().includes(search.toLowerCase()) ||
+    (emp.cargo || "").toLowerCase().includes(search.toLowerCase()) ||
+    (emp.correo || "").toLowerCase().includes(search.toLowerCase()) ||
+    (emp.documento || "").toLowerCase().includes(search.toLowerCase())
+  );
   const [resultado,setResultado] = useState("");
 
   // 🔐 TRAER EMPLEADOS DESDE BACKEND
@@ -100,6 +108,8 @@ function Vacaciones() {
           <input
             type="text"
             placeholder="Buscar empleados, cargos o documentos..."
+            value={search}
+            onChange={(e)=>setSearch(e.target.value)}
           />
         </div>
         <Link to="/dashboard" className="back-btn">← Volver al Panel</Link>
@@ -122,11 +132,15 @@ function Vacaciones() {
 
             <option value="">-- Seleccione --</option>
 
-            {empleados.map((emp,i)=>(
-              <option key={i} value={emp.nombre}>
-                {emp.nombre}
-              </option>
-            ))}
+            {empleadosFiltrados.length > 0 ? (
+              empleadosFiltrados.map((emp,i)=>(
+                <option key={i} value={emp.nombre}>
+                  {emp.nombre}
+                </option>
+              ))
+            ) : (
+              <option disabled>No hay empleados</option>
+            )}
 
           </select>
 

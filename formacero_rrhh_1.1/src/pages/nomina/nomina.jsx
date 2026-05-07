@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./nomina.css";
 import html2pdf from "html2pdf.js";
 
@@ -8,7 +8,11 @@ import { fetchWithAuth } from "../../utils/api";
 
 function Nomina() {
 
+  const navigate = useNavigate();
   const [empleados, setEmpleados] = useState([]);
+  const [search, setSearch] = useState("");
+  const [results, setResults] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
   const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState(null);
   const [dias, setDias] = useState("");
   const [desprendible, setDesprendible] = useState("");
@@ -38,6 +42,37 @@ function Nomina() {
   const handleEmpleadoChange = (id) => {
     const emp = empleados.find(e => e.id === parseInt(id));
     setEmpleadoSeleccionado(emp);
+  };
+
+  const handleSearchChange = async (e) => {
+    const value = e.target.value;
+    setSearch(value);
+
+    const query = value.trim();
+    if (query.length < 2) {
+      setResults([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    try {
+      const encoded = encodeURIComponent(query);
+      const res = await fetchWithAuth(`/empleados/search?q=${encoded}`);
+      const data = await res.json();
+
+      if (!res.ok || !Array.isArray(data)) {
+        setResults([]);
+        setShowDropdown(false);
+        return;
+      }
+
+      setResults(data);
+      setShowDropdown(true);
+    } catch (error) {
+      console.error("Error buscando empleados:", error);
+      setResults([]);
+      setShowDropdown(false);
+    }
   };
 
   function generarDesprendible() {
@@ -99,8 +134,32 @@ Fecha de generación: ${new Date().toLocaleDateString()}
         <div className="search-bar">
           <input
             type="text"
-            placeholder="Buscar empleados..."
+            placeholder="Buscar empleados por nombre, correo o cédula..."
+            value={search}
+            onChange={handleSearchChange}
+            onFocus={() => setShowDropdown(true)}
+            onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
           />
+          {showDropdown && results.length > 0 && (
+            <div className="search-dropdown">
+              {results.map(emp => (
+                <div
+                  key={emp.id}
+                  className="search-item"
+                  onMouseDown={() => navigate(`/empleado/${emp.id}`)}
+                >
+                  <img
+                    src={emp.foto_url || `https://i.pravatar.cc/40?u=${emp.id}`}
+                    alt={emp.nombre}
+                  />
+                  <div className="search-item-info">
+                    <strong>{emp.nombre}</strong>
+                    <p>{emp.correo || emp.documento || emp.cargo || "Empleado"}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <Link to="/dashboard" className="back-btn">
@@ -122,11 +181,15 @@ Fecha de generación: ${new Date().toLocaleDateString()}
           <label>Seleccionar empleado:</label>
           <select onChange={(e) => handleEmpleadoChange(e.target.value)}>
             <option value="">-- Seleccione --</option>
-            {empleados.map(emp => (
-              <option key={emp.id} value={emp.id}>
-                {emp.nombre} - {emp.cargo}
-              </option>
-            ))}
+            {empleados.length > 0 ? (
+              empleados.map(emp => (
+                <option key={emp.id} value={emp.id}>
+                  {emp.nombre} - {emp.cargo}
+                </option>
+              ))
+            ) : (
+              <option disabled>No hay empleados</option>
+            )}
           </select>
 
           <label>Salario Base:</label>

@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { fetchWithAuth } from "../../utils/api";
 import "./registrar-empleados.css";
 
 function RegistrarEmpleados() {
 
+  const navigate = useNavigate();
   const [empleados, setEmpleados] = useState([]);
+  const [search, setSearch] = useState("");
+  const [results, setResults] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
   const [successAlertMessage, setSuccessAlertMessage] = useState("");
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
 
@@ -75,6 +79,37 @@ function RegistrarEmpleados() {
   function handleDocs(e){
     setDocumentos([...e.target.files]);
   }
+
+  const handleSearchChange = async (e) => {
+    const value = e.target.value;
+    setSearch(value);
+
+    const query = value.trim();
+    if (query.length < 2) {
+      setResults([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    try {
+      const encoded = encodeURIComponent(query);
+      const res = await fetchWithAuth(`/empleados/search?q=${encoded}`);
+      const data = await res.json();
+
+      if (!res.ok || !Array.isArray(data)) {
+        setResults([]);
+        setShowDropdown(false);
+        return;
+      }
+
+      setResults(data);
+      setShowDropdown(true);
+    } catch (error) {
+      console.error("Error buscando empleados:", error);
+      setResults([]);
+      setShowDropdown(false);
+    }
+  };
 
   async function handleSubmit(e){
     e.preventDefault();
@@ -158,6 +193,7 @@ function RegistrarEmpleados() {
       alert(`❌ Error al registrar empleado: ${error.message || "Revise los datos e intente de nuevo."}`);
     }
   }
+  const filteredEmpleados = empleados;
 
   return (
 
@@ -166,7 +202,34 @@ function RegistrarEmpleados() {
       <header className="header">
         <div className="logo">Formacero</div>
         <div className="search-bar">
-          <input type="text" placeholder="Buscar empleados..." />
+          <input
+            type="text"
+            placeholder="Buscar empleados por nombre, correo o cédula..."
+            value={search}
+            onChange={handleSearchChange}
+            onFocus={() => setShowDropdown(true)}
+            onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+          />
+          {showDropdown && results.length > 0 && (
+            <div className="search-dropdown">
+              {results.map(emp => (
+                <div
+                  key={emp.id}
+                  className="search-item"
+                  onMouseDown={() => navigate(`/empleado/${emp.id}`)}
+                >
+                  <img
+                    src={emp.foto_url || `https://i.pravatar.cc/40?u=${emp.id}`}
+                    alt={emp.nombre}
+                  />
+                  <div className="search-item-info">
+                    <strong>{emp.nombre}</strong>
+                    <p>{emp.correo || emp.cedula || emp.cargo || "Empleado"}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         <Link to="/dashboard" className="back-btn">
           ← Volver al Panel
@@ -326,7 +389,7 @@ function RegistrarEmpleados() {
           <h2>Lista de Empleados Registrados</h2>
 
           <div>
-            {empleados.map((emp,i)=>(
+            {filteredEmpleados.map((emp,i)=>(
               <div key={i} className="employee-card">
 
                 {emp.preview && (

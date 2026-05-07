@@ -313,157 +313,6 @@ export const createEmpleado = async (req, res) => {
   }
 };
 
-    const correoNormalizado = correo.trim().toLowerCase();
-    const cedulaNormalizada = String(cedula).trim();
-
-    const { data: existingEmpleado, error: empleadoExistsError } = await supabase
-      .from("empleados")
-      .select("id")
-      .eq("correo", correoNormalizado)
-      .limit(1)
-      .single();
-
-    if (empleadoExistsError && empleadoExistsError.code !== "PGRST116") {
-      throw empleadoExistsError;
-    }
-
-    if (existingEmpleado) {
-      return res.status(409).json({
-        message: "El correo ya está registrado para otro empleado. Usa un correo diferente."
-      });
-    }
-
-    const { data: existingUsuario, error: usuarioExistsError } = await supabase
-      .from("usuarios")
-      .select("id")
-      .eq("correo", correoNormalizado)
-      .limit(1)
-      .single();
-
-    if (usuarioExistsError && usuarioExistsError.code !== "PGRST116") {
-      throw usuarioExistsError;
-    }
-
-    if (existingUsuario) {
-      return res.status(409).json({
-        message: "El correo ya está registrado para otro usuario. Usa un correo diferente."
-      });
-    }
-
-    const departamentoId = departamento
-      ? await findOrCreateDepartamentoId(departamento)
-      : null;
-
-    const isUsingServiceRole = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
-
-    if (!isUsingServiceRole && contactoEmergencia && contactoEmergencia.nombre) {
-      return res.status(500).json({
-        message: "No hay SUPABASE_SERVICE_ROLE_KEY configurada. Sin ella, la tabla contactos_emergencia bloquea la inserción por RLS."
-      });
-    }
-
-    const empleadoPayload = {
-      nombre,
-      documento: cedulaNormalizada,
-      correo: correoNormalizado,
-      cargo: cargo || null,
-      salario: salario || null,
-      fecha_ingreso: fechaIngreso || null,
-      fecha_nacimiento: fechaNacimiento || null,
-      telefono: telefono || null,
-      direccion: direccion || null,
-      departamento_id: departamentoId
-    };
-
-    const { data: empleadoData, error: empError } = await supabase
-      .from("empleados")
-      .insert([empleadoPayload])
-      .select();
-
-    if (empError) {
-      if (empError.code === "23505") {
-        return res.status(409).json({
-          message: "El correo ya existe en la base de datos. Usa un correo diferente."
-        });
-      }
-      throw empError;
-    }
-
-    const empleadoId = empleadoData[0].id;
-
-    // 3️⃣ Crear contacto de emergencia si se proporciona
-    if (contactoEmergencia && contactoEmergencia.nombre) {
-      const contactoPayload = {
-        empleado_id: empleadoId,
-        nombre: contactoEmergencia.nombre,
-        relacion: contactoEmergencia.relacion,
-        telefono_principal: contactoEmergencia.telefonoPrincipal,
-        telefono_alternativo: contactoEmergencia.telefonoAlternativo || null,
-        direccion: contactoEmergencia.direccion || null,
-        ciudad: contactoEmergencia.ciudad || null,
-        autorizacion: false
-      };
-
-      const { error: contactoError } = await supabase
-        .from("contactos_emergencia")
-        .insert([contactoPayload]);
-
-      if (contactoError) {
-        // Si falla, eliminar el empleado y usuario creados
-        await supabase.from("empleados").delete().eq("id", empleadoId);
-        await supabase.from("usuarios").delete().eq("empleado_id", empleadoId);
-
-        if (contactoError.code === "42501") {
-          return res.status(500).json({
-            message: "Error RLS: revise la clave SUPABASE_SERVICE_ROLE_KEY o las políticas de seguridad de la tabla contactos_emergencia."
-          });
-        }
-
-        throw contactoError;
-      }
-    }
-
-    // 2️⃣ Crear usuario
-    const defaultPassword = cedulaNormalizada;
-    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
-
-    const { error: userError } = await supabase
-      .from("usuarios")
-      .insert([{
-        nombre,
-        correo: correoNormalizado,
-        password: hashedPassword,
-        rol: "empleado",
-        empleado_id: empleadoId
-      }]);
-
-    if (userError) {
-      // Evita dejar empleado sin credenciales si falla la creación del usuario.
-      await supabase.from("empleados").delete().eq("id", empleadoId);
-
-      if (userError.code === "23505") {
-        return res.status(409).json({
-          message: "El correo ya existe para otro usuario. Usa un correo diferente."
-        });
-      }
-
-      throw userError;
-    }
-
-    res.json({
-      message: "Empleado y usuario creados",
-      credenciales: {
-        correo: correoNormalizado,
-        password: defaultPassword
-      }
-    });
-
-  } catch (err) {
-    console.error("ERROR CREATE:", err);
-    res.status(500).json(err);
-  }
-};
-
 // 🔹 ACTUALIZAR EMPLEADO
 export const updateEmpleado = async (req, res) => {
   try {
@@ -665,12 +514,16 @@ export const getCumpleaneros = async (req, res) => {
 // 🔍 BUSCAR EMPLEADO POR NOMBRE
 export const searchEmpleado = async (req, res) => {
   try {
-    const { q } = req.query;
+    const q = (req.query.q || "").trim();
+
+    if (q.length < 2) {
+      return res.json([]);
+    }
 
     const { data, error } = await supabase
       .from("empleados")
-      .select("id, nombre, documento, correo, telefono, departamento_id, departamentos(nombre)")
-      .ilike("nombre", `%${q}%`)
+      .select("id, nombre, documento, correo, telefono, cargo, foto_url, departamento_id, departamentos(nombre)")
+      .or(`nombre.ilike.%${q}%,correo.ilike.%${q}%,documento.ilike.%${q}%`)
       .limit(5);
 
     if (error) throw error;
